@@ -55,6 +55,8 @@ class DMXEngineThread(threading.Thread):
             # TODO Sleep for sub-step time
             time.sleep(1.0)
 
+        self._script.shutdown()
+
     ########################################################################
     # Terminate the engine thread. Called on the main thread.
     def Terminate(self):

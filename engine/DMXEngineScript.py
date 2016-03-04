@@ -33,6 +33,7 @@ class DMXEngineScript():
         Returns False if something fails.
         """
         # Read config for script
+        self._script = Configuration.Configuration.Scriptfile()
 
         # Open uDMX
         # TODO We really want a driver adapter here with selectable driver behind it
@@ -50,3 +51,11 @@ class DMXEngineScript():
         :return:
         """
         return True
+
+    def shutdown(self):
+        """
+        Shutdown the script engine
+        :return:
+        """
+        if self._dev:
+            self._dev.close()

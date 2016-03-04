@@ -18,8 +18,10 @@
 # {
 #   "Configuration":
 #   {
-#     "X10ControllerDevice": "XTB232",
-#     "ComPort": "COM1"
+#     "ScriptFile": "/path/to/scriptfile.dmx",
+#     "LogFile": "/path/to/filename.log",
+#     "LogConsole": "True",
+#     "LogLevel": "DEBUG"
 #   }
 # }
 #
