@@ -1,0 +1,11 @@
+*.pyc
+*.log
+AtHomeDMX.conf
+AtHomeDMX.log*
+Thumbs.db
+*.odt
+*.odg
+*.odt#
+*.odg#
+.idea/
+.DS_Store
