@@ -16,7 +16,7 @@
 
 import logging
 import Configuration
-import pyuDMX.pyuDMX
+import manager.InterfaceDriver
 
 logger = logging.getLogger("dmx")
 
@@ -32,16 +32,15 @@ class DMXEngineScript():
         :return: Returns True if engine is initialized.
         Returns False if something fails.
         """
-        # Read config for script
+        # Read config for script to execute
         self._script = Configuration.Configuration.Scriptfile()
 
-        # Open uDMX
-        # TODO We really want a driver adapter here with selectable driver behind it
-        self._dev = pyuDMX.pyuDMX.uDMXDevice()
+        # Open DMX interface driver
+        self._dev = manager.InterfaceDriver.get_driver()
         if self._dev.open():
-            logger.info("uDMX interface opened")
+            logger.info("DMX interface driver opened")
         else:
-            logger.error("uDMX interface failed to open")
+            logger.error("DMX interface driver failed to open")
             return False
         return True
 
