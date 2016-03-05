@@ -109,6 +109,11 @@ class Configuration():
 
   ######################################################################
   @classmethod
+  def Interface(cls):
+    return cls.get_config_var("Interface")
+
+  ######################################################################
+  @classmethod
   def Scriptfile(cls):
     return cls.get_config_var("ScriptFile")
 

@@ -1,0 +1,36 @@
+#
+# DMX test script
+#
+# Notes
+#   All keywords, names are case insensitive
+#
+
+At 17:00
+periodtime 0.5
+steptime 20.0
+fadetime 10.0
+
+# Device channel definitions (channel name number 1-512)
+channel tp64rgb  1
+channel tp64dimmer 6
+
+# Value definitions (value name integer 0-255...)
+value rgb-off 0 0 0
+value rgb-on 255 255 255
+value off 0
+value on 255
+
+# Initial state (set channel value(s))
+set tp64rgb rgb-off
+set tp64dimmer off
+
+# Main loop
+loop
+    step
+        fade tp64rgb rgb-on
+        set tp64dimmer on
+    step-end
+    step
+        fade tp64rgb 255 255 0
+    step-end
+loop-end
