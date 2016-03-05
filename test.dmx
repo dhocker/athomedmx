@@ -2,7 +2,10 @@
 # DMX test script
 #
 # Notes
-#   All keywords, names are case insensitive
+#   All keywords, names are case insensitive.
+#   The script starts with the initialization/setup phase
+#   which includes all of the statements up to the
+#   loop statement.
 #
 
 At 17:00
@@ -25,12 +28,21 @@ set tp64rgb rgb-off
 set tp64dimmer off
 
 # Main loop
+# The loop runs until the app is terminated. The loop statement ends
+# the intialization/setup phase which is all the statements
+# that precede the loop statement.
 loop
+    # Each step runs for steptime
     step
+        # Values fade from their intial to target values over fadetime
         fade tp64rgb rgb-on
+        # Values set immediately
         set tp64dimmer on
     step-end
     step
         fade tp64rgb 255 255 0
     step-end
 loop-end
+
+# If there is no loop statement, the script ends when there
+# are no more statements.
