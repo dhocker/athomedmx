@@ -12,14 +12,14 @@
 #######################################################################
 
 import logging
-import Version
+import version
 
 logger = logging.getLogger("dmx")
 
 _disclaimer = [
     "",
     "AtHomeDMX Copyright (C) 2016 Dave Hocker (AtHomeX10@gmail.com)",
-    "Version {0}".format(Version.GetVersion()),
+    "Version {0}".format(version.GetVersion()),
     "",
     "This program comes with ABSOLUTELY NO WARRANTY; for details see the LICENSE file.",
     "This is free software, and you are welcome to redistribute it",

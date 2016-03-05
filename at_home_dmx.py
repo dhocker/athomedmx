@@ -17,10 +17,10 @@
 # along with this program (the LICENSE file).  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Configuration
-import Logging
-import engine.DMXEngine
-import disclaimer.Disclaimer
+import configuration
+import app_logger
+import engine.dmx_engine
+import disclaimer.disclaimer
 import logging
 import signal
 import os
@@ -46,7 +46,7 @@ def main():
         dmx_engine.Stop()
         logger.info("AtHomeDMX shutdown complete")
         logger.info("################################################################################")
-        Logging.Shutdown()
+        app_logger.Shutdown()
 
     # Change the current directory so we can find the configuration file.
     # For Linux we should probably put the configuration file in the /etc directory.
@@ -54,24 +54,24 @@ def main():
     os.chdir(just_the_path)
 
     # Load the configuration file
-    Configuration.Configuration.LoadConfiguration()
+    configuration.Configuration.LoadConfiguration()
 
     # Per GPL, show the disclaimer
-    disclaimer.Disclaimer.DisplayDisclaimer()
+    disclaimer.disclaimer.DisplayDisclaimer()
     print("Use ctrl-c to shutdown engine\n")
 
     # Activate logging to console or file
     # Logging.EnableLogging()
-    Logging.EnableEngineLogging()
+    app_logger.EnableEngineLogging()
 
     logger.info("################################################################################")
 
     # For additional coverage, log the disclaimer
-    disclaimer.Disclaimer.LogDisclaimer()
+    disclaimer.disclaimer.LogDisclaimer()
 
     logger.info("Starting up...")
 
-    logger.info("Using configuration file: %s", Configuration.Configuration.GetConfigurationFilePath())
+    logger.info("Using configuration file: %s", configuration.Configuration.GetConfigurationFilePath())
     # TODO If we decide to support drivers, we probably need the configuration to
     # specify the type of interface (e.g. uDMX) and its unique identification)
     # For now, this app supports the first uDMX it finds.
@@ -85,7 +85,7 @@ def main():
 
     # TODO turn this into the script engine thread
     # Fire up the DMX script engine
-    dmx_engine = engine.DMXEngine.DMXEngine()
+    dmx_engine = engine.dmx_engine.DMXEngine()
 
     # Set up handler for the kill signal
     signal.signal(signal.SIGTERM, term_handler)

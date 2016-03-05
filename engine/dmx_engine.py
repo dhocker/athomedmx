@@ -13,7 +13,7 @@
 # Engine class encapsulating script engine thread
 #
 
-import DMXEngineThread
+import dmx_engine_thread
 
 
 # This class should be used as a singleton
@@ -26,7 +26,7 @@ class DMXEngine:
         Starts the script engine thread
         :return:
         """
-        self.engine_thread = DMXEngineThread.DMXEngineThread(1, "TimerServiceThread")
+        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "TimerServiceThread")
         self.engine_thread.start()
 
     def Stop(self):

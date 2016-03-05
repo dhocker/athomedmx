@@ -15,8 +15,8 @@
 #
 
 import logging
-import Configuration
-import manager.InterfaceDriver
+import configuration
+import driver.manager
 
 logger = logging.getLogger("dmx")
 
@@ -33,10 +33,10 @@ class DMXEngineScript():
         Returns False if something fails.
         """
         # Read config for script to execute
-        self._script = Configuration.Configuration.Scriptfile()
+        self._script = configuration.Configuration.Scriptfile()
 
         # Open DMX interface driver
-        self._dev = manager.InterfaceDriver.get_driver()
+        self._dev = driver.manager.get_driver()
         if self._dev.open():
             logger.info("DMX interface driver opened")
         else:

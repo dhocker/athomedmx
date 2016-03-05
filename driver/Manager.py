@@ -13,9 +13,9 @@
 # DMX interface driver
 #
 
-import Configuration
+import configuration
 import pyuDMX.pyuDMX
-import DummyDriver
+import dummy_driver
 import logging
 
 logger = logging.getLogger("dmx")
@@ -26,12 +26,12 @@ def get_driver():
     in the configuration file.
     :return:
     """
-    interface = Configuration.Configuration.Interface().lower()
+    interface = configuration.Configuration.Interface().lower()
     d = None
     if interface == "udmx":
         d = pyuDMX.pyuDMX.uDMXDevice()
     elif interface == "dummy":
-        d = DummyDriver.DummyDriver()
+        d = dummy_driver.DummyDriver()
 
     if d:
         logger.info("%s driver created", interface)

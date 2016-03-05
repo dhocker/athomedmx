@@ -17,8 +17,8 @@
 import threading
 import time
 import logging
-import Configuration
-import DMXEngineScript
+import configuration
+import dmx_engine_script
 
 logger = logging.getLogger("dmx")
 
@@ -32,12 +32,12 @@ class DMXEngineThread(threading.Thread):
         self.thread_id = thread_id
         self.name = name
         self.terminate_signal = threading.Event()
-        self._script = DMXEngineScript.DMXEngineScript()
+        self._script = dmx_engine_script.DMXEngineScript()
 
     ########################################################################
     # Called by threading on the new thread
     def run(self):
-        script_file = Configuration.Configuration.Scriptfile()
+        script_file = configuration.Configuration.Scriptfile()
         logger.info("Engine running script file %s", script_file)
 
         # TODO Initialize DMX script. Establish initial state.
