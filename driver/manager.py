@@ -14,7 +14,7 @@
 #
 
 import configuration
-import pyuDMX.pyuDMX
+import pyudmx.pyudmx
 import dummy_driver
 import logging
 
@@ -29,7 +29,7 @@ def get_driver():
     interface = configuration.Configuration.Interface().lower()
     d = None
     if interface == "udmx":
-        d = pyuDMX.pyuDMX.uDMXDevice()
+        d = pyudmx.pyudmx.uDMXDevice()
     elif interface == "dummy":
         d = dummy_driver.DummyDriver()
 
