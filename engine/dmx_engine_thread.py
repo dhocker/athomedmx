@@ -15,7 +15,6 @@
 #
 
 import threading
-import time
 import logging
 import configuration
 import dmx_engine_script
@@ -32,7 +31,7 @@ class DMXEngineThread(threading.Thread):
         self.thread_id = thread_id
         self.name = name
         self.terminate_signal = threading.Event()
-        self._script = dmx_engine_script.DMXEngineScript()
+        self._script = dmx_engine_script.DMXEngineScript(self.terminate_signal)
 
     ########################################################################
     # Called by threading on the new thread
@@ -45,17 +44,8 @@ class DMXEngineThread(threading.Thread):
             logger.error("Script initialize failed. Thread terminated.")
             self.terminate_signal.set()
 
-        # Check the terminate signal every second
-        while not self.terminate_signal.isSet():
-            # Run the next sub-step
-            logger.info("Step period start")
-            self._script.run_step_period()
-            logger.info("Step period end")
-
-            # TODO Sleep for sub-step time
-            time.sleep(1.0)
-
-        self._script.shutdown()
+        # run the script until termination is signaled
+        self._script.execute()
 
     ########################################################################
     # Terminate the engine thread. Called on the main thread.
@@ -67,9 +57,6 @@ class DMXEngineThread(threading.Thread):
         self.join()
         logger.info("Engine thread stopped")
 
-    def isTerminated(self):
-        """
-        Returns the status of the terminate signal
-        :return: True if the terminate signal has been set
-        """
+    @property
+    def is_terminated(self):
         return self.terminate_signal.isSet()

@@ -14,16 +14,26 @@
 # DMX script engine execution
 #
 
+import time
 import logging
 import configuration
+import script_vm
+import script_compiler
 import driver.manager
 
 logger = logging.getLogger("dmx")
 
 class DMXEngineScript():
-    def __init__(self):
+    def __init__(self, terminate_signal):
+        """
+        Construct instance
+        :param terminate_signal: injects a threading event that can be tested for termination
+        :return:
+        """
         self._script = None
         self._dev = None
+        self._vm = None
+        self._terminate_signal = terminate_signal
         pass
 
     def initialize(self):
@@ -42,13 +52,35 @@ class DMXEngineScript():
         else:
             logger.error("DMX interface driver failed to open")
             return False
-        return True
 
-    def run_step_period(self):
+        # Create a VM instance
+        self._vm = script_vm.ScriptVM()
+
+        # Compile the script (pass 1)
+        compiler = script_compiler.ScriptCompiler(self._vm)
+        rc = compiler.compile(self._script)
+        if rc:
+            logger.info("Successfully compiled script %s", self._script)
+
+        return rc
+
+    def execute(self):
         """
         Runs one step period
         :return:
         """
+
+        # Check the terminate signal every second
+        while not self._terminate_signal.isSet():
+            # Run the next sub-step
+            logger.info("Step period start")
+            #self._script.run_step_period()
+            logger.info("Step period end")
+
+            # TODO Sleep for sub-step time
+            time.sleep(1.0)
+
+        self.shutdown()
         return True
 
     def shutdown(self):

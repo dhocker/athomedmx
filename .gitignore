@@ -1,7 +1,7 @@
 *.pyc
 *.log
-AtHomeDMX.conf
-AtHomeDMX.log*
+at_home_dmx.conf
+at_home_dmx.log*
 Thumbs.db
 *.odt
 *.odg

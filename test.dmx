@@ -41,8 +41,11 @@ loop
     step-end
     step
         fade tp64rgb 255 255 0
+        set tp64dimmer 128
     step-end
 loop-end
 
 # If there is no loop statement, the script ends when there
 # are no more statements.
+
+# value bad 0 0 0 0 256

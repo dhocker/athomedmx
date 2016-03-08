@@ -106,7 +106,7 @@ def main():
         logger.info("AtHomeDMX shutting down...")
     except Exception as e:
         logger.error("Unhandled exception occurred")
-        logger.error(e.strerror)
+        logger.error(e)
         logger.error(sys.exc_info()[0])
     finally:
         # We actually get here through ctrl-c or process kill (SIGTERM)
