@@ -32,7 +32,7 @@ class ScriptCompiler:
             "channel": self.channel_stmt,
             "value": self.value_stmt,
             "import": None,
-            "send": None,
+            "send": self.send_stmt,
             "main": None,
             "step": None,
             "fade": None,
@@ -59,7 +59,8 @@ class ScriptCompiler:
         while stmt and valid:
             self._stmt = stmt
             self._line_number += 1
-            tokens = stmt.split()
+            # case insensitive tokenization
+            tokens = stmt.lower().split()
             valid = self.compile_statement(stmt, tokens)
             stmt = sf.readline()
 
@@ -206,3 +207,11 @@ class ScriptCompiler:
             self.script_error("Invalid channel and/or value(s)")
             return None
         return trans_tokens
+
+    def send_stmt(self, tokens):
+        """
+        send (no arguments)
+        :param tokens:
+        :return:
+        """
+        return tokens
