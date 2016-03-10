@@ -24,6 +24,9 @@ class ScriptCPU:
         self._vm = vm
         self._terminate_event = terminate_event
         self._stmt_index = 0
+        self._send_count = 0
+        self._fade_time = 0.0
+        self._step_time = 0.0
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -33,9 +36,9 @@ class ScriptCPU:
             "import": None,
             "send": self.send_stmt,
             "main": self.main_stmt,
-            "step": None,
-            "fade": None,
-            "step-end": None,
+            "step": self.step_stmt,
+            "fade": self.fade_stmt,
+            "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt
         }
 
@@ -61,15 +64,46 @@ class ScriptCPU:
                     logger.info("End of script")
                     break
             else:
+                # Unrecognized statements are treated as no-ops.
+                # Since the compile phase fails bad statements, the
+                # only reason to be here is for a statement that
+                # has not yet been implemented.
                 next_index = self._stmt_index + 1
 
+            # This sets the next statement
             self._stmt_index = next_index
 
-            # TODO Determine wait time based on step time and fade time
-            time.sleep(0.1)
-
         logger.info("Virtual CPU stopped")
+        self._reset()
         return next_index > 0
+
+    def _reset(self):
+        reset_msg = [0 for v in range(0, 512)]
+        self._send_message(1, reset_msg)
+        logger.info("All DMX channels reset")
+
+    def _send_message(self, channel, msg):
+        """
+        Send a DMX message
+        :param channel:
+        :param msg:
+        :return:
+        """
+        logger.debug(msg)
+        # Originally, the intent was to send the minimum number of bytes.
+        # However, it appears that either the pyUSB package or libusb package
+        # throws an overflow error if something other than a full size message
+        # of 512 bytes is sent.
+        # This try/catch is here to handle that error.
+        try:
+            self._send_count += 1
+            self._dmxdev.send_multi_value(channel, msg)
+        except Exception as ex:
+            logger.error("Unhandled exception sending DMX message")
+            logger.error(str(ex))
+            logger.error("Send count %d", self._send_count)
+            logger.error(msg)
+            raise ex
 
     def set_stmt(self, stmt):
         """
@@ -84,7 +118,27 @@ class ScriptCPU:
         for i in range(0, len(stmt) - 2):
             # the -1 accounts for the fact that channels are 1-512, not 0-511
             cur_index = stmt[1] + i - 1
+            # We set both the current and target so the delta is zero
             self._vm.set_current_value(cur_index, stmt[i + 2])
+            self._vm.set_target_value(cur_index, stmt[i + 2])
+        return self._stmt_index + 1
+
+    def fade_stmt(self, stmt):
+        """
+        Fade one or more channel values. Fading goes from the current value
+        to the target value.
+        :param stmt:
+        :return:
+        """
+        logger.debug(stmt)
+        # stmt[1] is the channel (1-512)
+        # stmt[2:] is/are the value(s)
+        # copy the statement values to the target message register
+        for i in range(0, len(stmt) - 2):
+            # the -1 accounts for the fact that channels are 1-512, not 0-511
+            cur_index = stmt[1] + i - 1
+            # We set both the current and target so the delta is zero
+            self._vm.set_target_value(cur_index, stmt[i + 2])
         return self._stmt_index + 1
 
     def send_stmt(self, stmt):
@@ -94,9 +148,9 @@ class ScriptCPU:
         :return:
         """
         logger.debug(stmt)
-        msg = self._vm.current[:self._vm.current_len]
-        logger.debug(msg)
-        self._dmxdev.send_multi_value(1, msg )
+        # Send the entire current message register
+        self._send_message(1, self._vm.current)
+
         return self._stmt_index + 1
 
     def main_stmt(self, stmt):
@@ -117,3 +171,96 @@ class ScriptCPU:
         logger.debug(stmt)
         # This is the loop point for the main loop
         return self._vm.main_index
+
+    def step_stmt(self, stmt):
+        """
+        Begin a program step
+        :param stmt: step fade-time step-time
+        :return:
+        """
+        logger.debug(stmt)
+        # Capture times for step-end
+        self._fade_time = float(stmt[1])
+        self._step_time = float(stmt[2])
+        return self._stmt_index + 1
+
+    def step_end_stmt(self, stmt):
+        """
+        Step end - execute the step statements.
+        Mostly, this is about fading values from some starting
+        value to a target value.
+        :param stmt:
+        :return:
+        """
+
+        # TODO This is messy and needs to be refactored/cleaned up
+
+        # The timer increment for the fade/step loop
+        # TODO Make this a settable value via a script statement
+        period_time = 0.1
+
+        logger.debug(stmt)
+
+        # Send the entire current message register
+        # This amounts to the starting point for the step
+        logger.debug("Sending current DMX message")
+        self._send_message(1, self._vm.current)
+
+        # How many increments to complete fade
+        incrs = self._fade_time / period_time
+        logger.debug("%d fade increments", incrs)
+
+        # Compute fade value increment for each channel value
+        delta_values = []
+        base_values = []
+        for i in range(0, len(self._vm.target)):
+            # Build a copy of the starting channel values
+            base_values.append(self._vm.current[i])
+            # Value change per period
+            v = (self._vm.target[i] - self._vm.current[i]) / incrs
+            # Note that delta values are floats
+            delta_values.append(v)
+            if v != 0.0:
+                logger.debug("Channel %d delta fade %f", i, v)
+
+        # During fade/step time, check termination event to avoid hangs
+        # Note that if fade time > step time, the target value will not be reached.
+        fade_time = self._fade_time
+        step_time = self._step_time
+        fade_count = 1.0 # Intentionally a float
+        while (not self._terminate_event.isSet()) and (step_time > 0.0):
+            # Wait for step period time
+            time.sleep(period_time)
+
+            # Until fade time has passed...
+            if fade_time > 0.0:
+                # Adjust the current message register with the fade increments
+                # Send the altered message register
+                changed = False
+                for i in range(0, len(self._vm.current)):
+                    # Value change per period
+                    if delta_values[i] != 0.0:
+                        # Apply fade increment to current value.
+                        # This is done in a way that avoids truncation/rounding issues
+                        self._vm.current[i] = base_values[i] + int(delta_values[i] * fade_count)
+                        # Make sure adjusted value stays in range 0-255
+                        if self._vm.current[i] < 0:
+                            self._vm.current[i] = 0
+                        elif self._vm.current[i] > 255:
+                            self._vm.current[i] = 255
+                        changed = True
+
+                # If fading changed any values, send them
+                if changed:
+                    self._send_message(1, self._vm.current)
+
+                # Last fade increment
+                if fade_time <= period_time:
+                    logger.debug("Fade ended")
+                fade_count += 1.0
+
+            fade_time -= period_time
+            step_time -= period_time
+
+        # Exit the step
+        return self._stmt_index + 1

@@ -40,3 +40,9 @@ class ScriptVM():
         # Adjust the effective length of the DMX current message
         if index > (self.current_len - 1):
             self.current_len = index + 1
+
+    def set_target_value(self, index, v):
+        self.target[index] = v
+        # Adjust the effective length of the DMX current message
+        if index > (self.target_len - 1):
+            self.target_len = index + 1

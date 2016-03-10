@@ -15,36 +15,54 @@ fadetime 10.0
 
 # Device channel definitions (channel name number 1-512)
 channel tp64rgb  1
-channel tp64dimmer 6
+channel tp64mode 6
+channel tp64dimmer 7
 
 # Value definitions (value name integer 0-255...)
 value rgb-off 0 0 0
 value rgb-on 255 255 255
 value off 0
 value on 255
+value rgb-mode 0
 
 # Initial state (set channel value(s))
 set tp64rgb rgb-off
+set tp64mode rgb-mode
 set tp64dimmer off
 send
 
 # Main loop
-# The loop runs until the app is terminated. The loop statement ends
+# The main loop runs until the app is terminated. The main statement ends
 # the intialization/setup phase which is all the statements
-# that precede the loop statement.
+# that precede the main statement.
 main
-    # Each step runs for steptime
-    step
-        # Values fade from their intial to target values over fadetime
-        fade tp64rgb rgb-on
-        # Values set immediately
+    # Each step runs for step-time 5.0
+    step 3.0 5.0
+        # Immediate changes
+        set tp64rgb rgb-off
         set tp64dimmer on
-    step-end
-    step
-        fade tp64rgb 255 255 0
-        set tp64dimmer 128
+        send
+        # Values fade from their initial to target values over fadetime
+        fade tp64rgb on 0 on
     step-end
 
+    set tp64rgb rgb-off
+    set tp64dimmer on
+    send
+
+    step 3.0 5.0
+        fade tp64rgb 0 on on
+    step-end
+
+    set tp64rgb rgb-off
+    set tp64dimmer on
+    send
+
+    step 3.0 5.0
+        fade tp64rgb on on 0
+    step-end
+
+    set tp64dimmer off
     send
 main-end
 

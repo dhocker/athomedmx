@@ -34,9 +34,9 @@ class ScriptCompiler:
             "import": None,
             "send": self.send_stmt,
             "main": self.main_stmt,
-            "step": None,
-            "fade": None,
-            "step-end": None,
+            "step": self.step_stmt,
+            "fade": self.fade_stmt,
+            "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt
         }
 
@@ -128,6 +128,13 @@ class ScriptCompiler:
             return False
         return True
 
+    def is_valid_time(self, t):
+        try:
+            v = float(t)
+        except:
+            return False
+        return True
+
     def resolve_tokens(self, message_tokens):
         """
         Translates statement alias references to their defined values.
@@ -208,6 +215,23 @@ class ScriptCompiler:
             return None
         return trans_tokens
 
+    def fade_stmt(self, tokens):
+        """
+        fade channel v1...vn where channel 1-512, vn 0-255
+        :param tokens:
+        :return:
+        """
+        if len(tokens) < 3:
+            self.script_error("Not enough tokens")
+            return None
+        trans_tokens = self.resolve_tokens(tokens)
+        if self.is_valid_channel(trans_tokens[1]) and self.are_valid_values(trans_tokens[2:]):
+            pass
+        else:
+            self.script_error("Invalid channel and/or value(s)")
+            return None
+        return trans_tokens
+
     def send_stmt(self, tokens):
         """
         send (no arguments)
@@ -232,4 +256,33 @@ class ScriptCompiler:
         :param tokens:
         :return:
         """
+        return tokens
+
+    def step_stmt(self, tokens):
+        """
+        Program step statement with fade-time and step-time arguments (floats)
+        :param tokens: step fade-time step-time
+        :return:
+        """
+        if len(tokens) < 3:
+            self.script_error("Missing statement arguments")
+            return None
+        if not self.is_valid_time(tokens[1]):
+            self.script_error("Invalid fade time")
+            return None
+        if not self.is_valid_time(tokens[2]):
+            self.script_error("Invalid step time ")
+            return None
+
+        tokens[1] = float(tokens[1])
+        tokens[2] = float(tokens[2])
+        return tokens
+
+    def step_end_stmt(self, tokens):
+        """
+        Program step end (no arguments)
+        :param tokens:
+        :return:
+        """
+        # TODO Consider value substitution for times
         return tokens

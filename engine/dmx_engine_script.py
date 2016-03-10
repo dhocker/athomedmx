@@ -62,7 +62,6 @@ class DMXEngineScript():
         if rc:
             logger.info("Successfully compiled script %s", self._script)
 
-        self.shutdown()
         return rc
 
     def execute(self):
