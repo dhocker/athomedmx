@@ -32,11 +32,11 @@ class ScriptCPU:
             "value": None,
             "import": None,
             "send": self.send_stmt,
-            "main": None,
+            "main": self.main_stmt,
             "step": None,
             "fade": None,
             "step-end": None,
-            "main-end": None
+            "main-end": self.main_end_stmt
         }
 
     def run(self):
@@ -98,3 +98,22 @@ class ScriptCPU:
         logger.debug(msg)
         self._dmxdev.send_multi_value(1, msg )
         return self._stmt_index + 1
+
+    def main_stmt(self, stmt):
+        """
+        Set the main loop point
+        :param stmt:
+        :return:
+        """
+        logger.debug(stmt)
+        return self._stmt_index + 1
+
+    def main_end_stmt(self, stmt):
+        """
+        Change the next statement index to the main loop point
+        :param stmt:
+        :return:
+        """
+        logger.debug(stmt)
+        # This is the loop point for the main loop
+        return self._vm.main_index

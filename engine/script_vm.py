@@ -17,16 +17,23 @@ class ScriptVM():
     def __init__(self):
         # Script statements are a list of token lists
         self.stmts = []
+
         # Current DMX channel values
         self.current = [0 for v in range(0, 512)]
         self.current_len = 0
+
         # Target DMX channel values for fade statements
         self.target = [0 for v in range(0, 512)]
         self.target_len = 0
+
         # Channel definitions
         self.channels = {}
+
         # Value definitions
         self.values = {}
+
+        # Main statement index
+        self.main_index = -1
 
     def set_current_value(self, index, v):
         self.current[index] = v

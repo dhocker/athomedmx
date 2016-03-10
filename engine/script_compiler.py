@@ -33,11 +33,11 @@ class ScriptCompiler:
             "value": self.value_stmt,
             "import": None,
             "send": self.send_stmt,
-            "main": None,
+            "main": self.main_stmt,
             "step": None,
             "fade": None,
             "step-end": None,
-            "main-end": None
+            "main-end": self.main_end_stmt
         }
 
     def compile(self, script_file):
@@ -211,6 +211,24 @@ class ScriptCompiler:
     def send_stmt(self, tokens):
         """
         send (no arguments)
+        :param tokens:
+        :return:
+        """
+        return tokens
+
+    def main_stmt(self, tokens):
+        """
+        main loop point (no arguments)
+        :param tokens:
+        :return:
+        """
+        # This should point to the main statement
+        self._vm.main_index = len(self._vm.stmts)
+        return tokens
+
+    def main_end_stmt(self, tokens):
+        """
+        main loop end point (no arguments)
         :param tokens:
         :return:
         """

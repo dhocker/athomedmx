@@ -32,7 +32,7 @@ send
 # The loop runs until the app is terminated. The loop statement ends
 # the intialization/setup phase which is all the statements
 # that precede the loop statement.
-loop
+main
     # Each step runs for steptime
     step
         # Values fade from their intial to target values over fadetime
@@ -44,9 +44,9 @@ loop
         fade tp64rgb 255 255 0
         set tp64dimmer 128
     step-end
-loop-end
 
-send
+    send
+main-end
 
 # If there is no loop statement, the script ends when there
 # are no more statements.
