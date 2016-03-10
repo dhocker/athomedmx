@@ -32,6 +32,9 @@ class ScriptVM():
         # Value definitions
         self.values = {}
 
+        # Defines
+        self.defines = {}
+
         # Main statement index
         self.main_index = -1
 

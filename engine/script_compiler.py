@@ -31,6 +31,7 @@ class ScriptCompiler:
             "set": self.set_stmt,
             "channel": self.channel_stmt,
             "value": self.value_stmt,
+            "define": self.define_stmt,
             "import": None,
             "send": self.send_stmt,
             "main": self.main_stmt,
@@ -103,6 +104,19 @@ class ScriptCompiler:
         int_values = map(int, values)
         self._vm.values[name] = int_values
 
+    def add_values(self, name, values):
+        """
+        Adds an alias with list of values to the channel/value dictionary.
+        """
+        int_values = map(int, values)
+        self._vm.values[name] = int_values
+
+    def add_define(self, name, value):
+        """
+        Adds an alias with a float value defines dictionary.
+        """
+        self._vm.defines[name] = float(value)
+
     def is_valid_channel(self, channel):
         """
         Determines if a channel number is a valid DMX channel (1-512).
@@ -128,7 +142,7 @@ class ScriptCompiler:
             return False
         return True
 
-    def is_valid_time(self, t):
+    def is_valid_float(self, t):
         try:
             v = float(t)
         except:
@@ -195,6 +209,22 @@ class ScriptCompiler:
             self.add_values(tokens[1], tokens[2:])
         else:
             self.script_error("Value(s) must be 0-255")
+            return None
+        return []
+
+    def define_stmt(self, tokens):
+        """
+        define name v where v can be any value, int or float
+        :param tokens:
+        :return:
+        """
+        if len(tokens) < 3:
+            self.script_error("Not enough tokens")
+            return None
+        if self.is_valid_float(tokens[2]):
+            self.add_define(tokens[1], tokens[2])
+        else:
+            self.script_error("A defined value must be a valid float")
             return None
         return []
 
@@ -267,15 +297,21 @@ class ScriptCompiler:
         if len(tokens) < 3:
             self.script_error("Missing statement arguments")
             return None
-        if not self.is_valid_time(tokens[1]):
+        if tokens[1] in self._vm.defines:
+            tokens[1] = self._vm.defines[tokens[1]]
+        elif self.is_valid_float(tokens[1]):
+            tokens[1] = float(tokens[1])
+        else:
             self.script_error("Invalid fade time")
             return None
-        if not self.is_valid_time(tokens[2]):
+        if tokens[2] in self._vm.defines:
+            tokens[2] = self._vm.defines[tokens[2]]
+        elif self.is_valid_float(tokens[2]):
+            tokens[2] = float(tokens[2])
+        else:
             self.script_error("Invalid step time ")
             return None
 
-        tokens[1] = float(tokens[1])
-        tokens[2] = float(tokens[2])
         return tokens
 
     def step_end_stmt(self, tokens):

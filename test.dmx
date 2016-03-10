@@ -25,6 +25,10 @@ value off 0
 value on 255
 value rgb-mode 0
 
+# Time definitions
+define default-fade-time 3.0
+define default-step-time 5.0
+
 # Initial state (set channel value(s))
 set tp64rgb rgb-off
 set tp64mode rgb-mode
@@ -37,7 +41,7 @@ send
 # that precede the main statement.
 main
     # Each step runs for step-time 5.0
-    step 3.0 5.0
+    step default-fade-time default-step-time
         # Immediate changes
         set tp64rgb rgb-off
         set tp64dimmer on
@@ -50,7 +54,7 @@ main
     set tp64dimmer on
     send
 
-    step 3.0 5.0
+    step default-fade-time default-step-time
         fade tp64rgb 0 on on
     step-end
 
@@ -58,7 +62,7 @@ main
     set tp64dimmer on
     send
 
-    step 3.0 5.0
+    step default-fade-time default-step-time
         fade tp64rgb on on 0
     step-end
 
