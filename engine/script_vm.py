@@ -19,9 +19,17 @@ class ScriptVM():
         self.stmts = []
         # Current DMX channel values
         self.current = [0 for v in range(0, 512)]
+        self.current_len = 0
         # Target DMX channel values for fade statements
         self.target = [0 for v in range(0, 512)]
+        self.target_len = 0
         # Channel definitions
         self.channels = {}
         # Value definitions
         self.values = {}
+
+    def set_current_value(self, index, v):
+        self.current[index] = v
+        # Adjust the effective length of the DMX current message
+        if index > (self.current_len - 1):
+            self.current_len = index + 1

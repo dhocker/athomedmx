@@ -46,6 +46,7 @@ class DMXEngineThread(threading.Thread):
 
         # run the script until termination is signaled
         self._script.execute()
+        self.terminate_signal.set()
 
     ########################################################################
     # Terminate the engine thread. Called on the main thread.

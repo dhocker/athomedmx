@@ -14,11 +14,11 @@
 # DMX script engine execution
 #
 
-import time
 import logging
 import configuration
 import script_vm
 import script_compiler
+import script_cpu
 import driver.manager
 
 logger = logging.getLogger("dmx")
@@ -62,6 +62,7 @@ class DMXEngineScript():
         if rc:
             logger.info("Successfully compiled script %s", self._script)
 
+        self.shutdown()
         return rc
 
     def execute(self):
@@ -70,18 +71,11 @@ class DMXEngineScript():
         :return:
         """
 
-        # Check the terminate signal every second
-        while not self._terminate_signal.isSet():
-            # Run the next sub-step
-            logger.info("Step period start")
-            #self._script.run_step_period()
-            logger.info("Step period end")
-
-            # TODO Sleep for sub-step time
-            time.sleep(1.0)
+        cpu = script_cpu.ScriptCPU(self._dev, self._vm, self._terminate_signal)
+        rc = cpu.run()
 
         self.shutdown()
-        return True
+        return rc
 
     def shutdown(self):
         """

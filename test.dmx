@@ -26,6 +26,7 @@ value on 255
 # Initial state (set channel value(s))
 set tp64rgb rgb-off
 set tp64dimmer off
+send
 
 # Main loop
 # The loop runs until the app is terminated. The loop statement ends
@@ -44,6 +45,8 @@ loop
         set tp64dimmer 128
     step-end
 loop-end
+
+send
 
 # If there is no loop statement, the script ends when there
 # are no more statements.
