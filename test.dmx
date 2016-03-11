@@ -9,9 +9,6 @@
 #
 
 At 17:00
-periodtime 0.5
-steptime 20.0
-fadetime 10.0
 
 # Device channel definitions (channel name number 1-512)
 channel tp64rgb  1
@@ -28,7 +25,8 @@ value rgb-mode 0
 # Time definitions
 define default-fade-time 3.0
 define default-step-time 5.0
-step-period 0.2
+define periodtime 0.2
+step-period periodtime
 
 # Initial state (set channel value(s))
 set tp64rgb rgb-off
