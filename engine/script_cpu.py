@@ -39,7 +39,8 @@ class ScriptCPU:
             "step": self.step_stmt,
             "fade": self.fade_stmt,
             "step-end": self.step_end_stmt,
-            "main-end": self.main_end_stmt
+            "main-end": self.main_end_stmt,
+            "step-period": self.step_period_stmt
         }
 
     def run(self):
@@ -259,4 +260,14 @@ class ScriptCPU:
             step_time -= self._vm.step_period_time
 
         # Exit the step
+        return self._stmt_index + 1
+
+    def step_period_stmt(self, stmt):
+        """
+        Sets the global step period time
+        :param stmt:
+        :return:
+        """
+        logger.debug(stmt)
+        self._vm.step_period_time = float(stmt[1])
         return self._stmt_index + 1

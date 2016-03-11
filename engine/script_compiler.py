@@ -38,7 +38,8 @@ class ScriptCompiler:
             "step": self.step_stmt,
             "fade": self.fade_stmt,
             "step-end": self.step_end_stmt,
-            "main-end": self.main_end_stmt
+            "main-end": self.main_end_stmt,
+            "step-period": self.step_period_stmt
         }
 
     def compile(self, script_file):
@@ -151,7 +152,7 @@ class ScriptCompiler:
 
     def resolve_tokens(self, message_tokens):
         """
-        Translates statement alias references to their defined values.
+        Translates statement alias references to their actual values.
         The first token is the statement verb.
         The second token is a channel alias.
         The remaining tokens are value aliases.
@@ -169,6 +170,19 @@ class ScriptCompiler:
                 trans_tokens.append(int(token))
 
         return trans_tokens
+
+    def resolve_define(self, token):
+        """
+        Resolve a token that is subject to substitution by a define
+        :param token:
+        :return:
+        """
+        if token in self._vm.defines:
+            return self._vm.defines[token]
+        elif self.is_valid_float(token):
+            return float(token)
+        else:
+            return None
 
     def script_error(self, message):
         """
@@ -321,4 +335,22 @@ class ScriptCompiler:
         :return:
         """
         # TODO Consider value substitution for times
+        return tokens
+
+    def step_period_stmt(self, tokens):
+        """
+        Sets the global step-period valid. Default is 0.1 sec.
+        :param tokens: step fade-time step-time
+        :return:
+        """
+        if len(tokens) < 2:
+            self.script_error("Missing statement arguments")
+            return None
+        pt = self.resolve_define(tokens[1])
+        if pt is not None:
+            tokens[1] = pt
+        else:
+            self.script_error("Invalid step period time")
+            return None
+
         return tokens

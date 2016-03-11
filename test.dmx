@@ -28,6 +28,7 @@ value rgb-mode 0
 # Time definitions
 define default-fade-time 3.0
 define default-step-time 5.0
+step-period 0.2
 
 # Initial state (set channel value(s))
 set tp64rgb rgb-off
