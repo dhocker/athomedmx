@@ -38,6 +38,9 @@ class ScriptVM():
         # Main statement index
         self.main_index = -1
 
+        # Step-period time
+        self.step_period_time = 0.1
+
     def set_current_value(self, index, v):
         self.current[index] = v
         # Adjust the effective length of the DMX current message

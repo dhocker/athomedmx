@@ -85,14 +85,14 @@ class ScriptCPU:
     def _send_message(self, channel, msg):
         """
         Send a DMX message
-        :param channel:
-        :param msg:
+        :param channel: DMX channel 1-512
+        :param msg: list of channel values to be sent (all 512)
         :return:
         """
         logger.debug(msg)
         # Originally, the intent was to send the minimum number of bytes.
         # However, it appears that either the pyUSB package or libusb package
-        # throws an overflow error if something other than a full size message
+        # occasionally throws an overflow error if something other than a full size message
         # of 512 bytes is sent.
         # This try/catch is here to handle that error.
         try:
@@ -195,10 +195,6 @@ class ScriptCPU:
 
         # TODO This is messy and needs to be refactored/cleaned up
 
-        # The timer increment for the fade/step loop
-        # TODO Make this a settable value via a script statement
-        period_time = 0.1
-
         logger.debug(stmt)
 
         # Send the entire current message register
@@ -207,7 +203,7 @@ class ScriptCPU:
         self._send_message(1, self._vm.current)
 
         # How many increments to complete fade
-        incrs = self._fade_time / period_time
+        incrs = self._fade_time / self._vm.step_period_time
         logger.debug("%d fade increments", incrs)
 
         # Compute fade value increment for each channel value
@@ -230,7 +226,7 @@ class ScriptCPU:
         fade_count = 1.0 # Intentionally a float
         while (not self._terminate_event.isSet()) and (step_time > 0.0):
             # Wait for step period time
-            time.sleep(period_time)
+            time.sleep(self._vm.step_period_time)
 
             # Until fade time has passed...
             if fade_time > 0.0:
@@ -255,12 +251,12 @@ class ScriptCPU:
                     self._send_message(1, self._vm.current)
 
                 # Last fade increment
-                if fade_time <= period_time:
+                if fade_time <= self._vm.step_period_time:
                     logger.debug("Fade ended")
                 fade_count += 1.0
 
-            fade_time -= period_time
-            step_time -= period_time
+            fade_time -= self._vm.step_period_time
+            step_time -= self._vm.step_period_time
 
         # Exit the step
         return self._stmt_index + 1
