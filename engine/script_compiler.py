@@ -71,6 +71,12 @@ class ScriptCompiler:
         return valid
 
     def compile_statement(self, stmt, tokens):
+        """
+        Compile a single tokenized statement.
+        :param stmt:
+        :param tokens:
+        :return: True if statement is valid.
+        """
         # Comments and empty lines
         if len(tokens) == 0 or tokens[0] == "#":
             return True
@@ -144,6 +150,11 @@ class ScriptCompiler:
         return True
 
     def is_valid_float(self, t):
+        """
+        Answers the question: Is t a valid floating point number?
+        :param t:
+        :return: True if t is a valid floating point number.
+        """
         try:
             v = float(t)
         except:
@@ -154,8 +165,8 @@ class ScriptCompiler:
         """
         Translates statement alias references to their actual values.
         The first token is the statement verb.
-        The second token is a channel alias.
-        The remaining tokens are value aliases.
+        The second token is a channel number or alias.
+        The remaining tokens are values or value aliases.
         """
         trans_tokens = [message_tokens[0]]
         if message_tokens[1] in self._vm.channels:
@@ -339,7 +350,7 @@ class ScriptCompiler:
 
     def step_period_stmt(self, tokens):
         """
-        Sets the global step-period valid. Default is 0.1 sec.
+        Sets the global step-period value. Default is 0.1 sec.
         :param tokens: step fade-time step-time
         :return:
         """

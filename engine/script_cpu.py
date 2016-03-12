@@ -49,7 +49,9 @@ class ScriptCPU:
         :return:
         """
         logger.info("Virtual CPU running...")
+        # The statement index is like an instruction address
         next_index = self._stmt_index
+
         # Run CPU until termination is signaled by main thread
         while not self._terminate_event.isSet():
             stmt = self._vm.stmts[self._stmt_index]
@@ -57,6 +59,7 @@ class ScriptCPU:
             if self._valid_stmts[stmt[0]] is not None:
                 # The statement execution sets the next statement index
                 next_index = self._valid_stmts[stmt[0]](stmt)
+                # If the statement threw an exception end the script
                 if next_index < 0:
                     logger.error("Virtual CPU stopped due to error")
                     break
@@ -79,6 +82,12 @@ class ScriptCPU:
         return next_index > 0
 
     def _reset(self):
+        """
+        Reset all DMX channels to value zero.
+        This should turn everything off.
+        :return:
+        """
+        # TODO Determine if this is the right thing to do
         reset_msg = [0 for v in range(0, 512)]
         self._send_message(1, reset_msg)
         logger.info("All DMX channels reset")
@@ -205,16 +214,16 @@ class ScriptCPU:
 
         # How many increments to complete fade
         incrs = self._fade_time / self._vm.step_period_time
-        logger.debug("%d fade increments", incrs)
+        logger.debug("%f fade increments", incrs)
+
+        # Build a copy of the starting channel values
+        base_values = list(self._vm.current)
 
         # Compute fade value increment for each channel value
         delta_values = []
-        base_values = []
         for i in range(0, len(self._vm.target)):
-            # Build a copy of the starting channel values
-            base_values.append(self._vm.current[i])
             # Value change per period
-            v = (self._vm.target[i] - self._vm.current[i]) / incrs
+            v = float(self._vm.target[i] - self._vm.current[i]) / incrs
             # Note that delta values are floats
             delta_values.append(v)
             if v != 0.0:
