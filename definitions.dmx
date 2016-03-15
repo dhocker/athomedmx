@@ -1,0 +1,27 @@
+#
+# DMX importable test script
+#
+# Notes
+#   All keywords, names are case insensitive.
+#   The script starts with the initialization/setup phase
+#   which includes all of the statements up to the
+#   loop statement.
+#
+
+# Device channel definitions (channel name number 1-512)
+channel tp64rgb  1
+channel tp64mode 6
+channel tp64dimmer 7
+
+# Value definitions (value name integer 0-255...)
+value rgb-off 0 0 0
+value rgb-on 255 255 255
+value off 0
+value on 255
+value rgb-mode 0
+
+# Time definitions
+define default-fade-time 3.0
+define default-step-time 5.0
+define periodtime 0.2
+step-period periodtime

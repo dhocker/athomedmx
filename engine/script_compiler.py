@@ -24,7 +24,9 @@ class ScriptCompiler:
     def __init__(self, vm):
         self._vm = vm
         self._stmt = None
-        self._line_number = 0
+        self._file_depth = 0
+        self._line_number = [0]
+        self._file_path = [""]
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -32,14 +34,15 @@ class ScriptCompiler:
             "channel": self.channel_stmt,
             "value": self.value_stmt,
             "define": self.define_stmt,
-            "import": None,
+            "import": self.import_stmt,
             "send": self.send_stmt,
             "main": self.main_stmt,
             "step": self.step_stmt,
             "fade": self.fade_stmt,
             "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt,
-            "step-period": self.step_period_stmt
+            "step-period": self.step_period_stmt,
+            "at": None
         }
 
     def compile(self, script_file):
@@ -52,22 +55,27 @@ class ScriptCompiler:
         # Open the script file for compiling
         try:
             sf = open(script_file, "r")
-        except:
+            self._file_path[self._file_depth] = script_file
+        except Exception as ex:
             logger.error("Error opening script file %s", script_file)
+            logger.error(str(ex))
             return False
 
         valid = True
         stmt = sf.readline()
         while stmt and valid:
             self._stmt = stmt
-            self._line_number += 1
+            self._line_number[self._file_depth] += 1
             # case insensitive tokenization
             tokens = stmt.lower().split()
             valid = self.compile_statement(stmt, tokens)
             stmt = sf.readline()
 
         sf.close()
-        logger.debug("%d statements compiled", len(self._vm.stmts))
+
+        # End of main file
+        if self._file_depth == 0:
+            logger.debug("%d statements compiled", len(self._vm.stmts))
         return valid
 
     def compile_statement(self, stmt, tokens):
@@ -78,7 +86,7 @@ class ScriptCompiler:
         :return: True if statement is valid.
         """
         # Comments and empty lines
-        if len(tokens) == 0 or tokens[0] == "#":
+        if len(tokens) == 0 or tokens[0].startswith("#"):
             return True
 
         # A statement is valid by default
@@ -95,6 +103,9 @@ class ScriptCompiler:
                     self._vm.stmts.append(compiled_tokens)
                 elif compiled_tokens is None:
                     valid = False
+        else:
+            self.script_error("Unrecognized statement")
+            valid = False
 
         return valid
 
@@ -201,7 +212,9 @@ class ScriptCompiler:
         :param message:
         :return:
         """
-        logger.error("Script error at line %d", self._line_number)
+        logger.error("Script error in file %s at line %d",
+                     self._file_path[self._file_depth],
+                     self._line_number[self._file_depth])
         logger.error(self._stmt)
         logger.error(message)
 
@@ -290,7 +303,7 @@ class ScriptCompiler:
     def send_stmt(self, tokens):
         """
         send (no arguments)
-        :param tokens:
+        :param tokens: None required, all ignored
         :return:
         """
         return tokens
@@ -364,4 +377,31 @@ class ScriptCompiler:
             self.script_error("Invalid step period time")
             return None
 
+        return tokens
+
+    def import_stmt(self, tokens):
+        """
+        Import a source file directly in-line
+        :param tokens: filepath
+        :return:
+        """
+        if len(tokens) < 2:
+            self.script_error("Missing file path")
+            return None
+
+        # Push the imported file onto the file stack
+        self._file_depth += 1
+        self._file_path.append(tokens[1])
+        self._line_number.append(0)
+
+        # This is a recursive call to compile the imported file
+        # TODO Do we need a recursion limit here?
+        self.compile(tokens[1])
+
+        # Pop the file stack
+        self._file_depth -= 1
+        self._line_number.pop()
+        self._file_path.pop()
+
+        # The cpu will ignore this statement
         return tokens

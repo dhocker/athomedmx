@@ -8,25 +8,10 @@
 #   loop statement.
 #
 
-At 17:00
+#At 17:00
 
-# Device channel definitions (channel name number 1-512)
-channel tp64rgb  1
-channel tp64mode 6
-channel tp64dimmer 7
-
-# Value definitions (value name integer 0-255...)
-value rgb-off 0 0 0
-value rgb-on 255 255 255
-value off 0
-value on 255
-value rgb-mode 0
-
-# Time definitions
-define default-fade-time 3.0
-define default-step-time 5.0
-define periodtime 0.2
-step-period periodtime
+# Test of import. Brings in definitions used below
+import definitions.dmx
 
 # Initial state (set channel value(s))
 set tp64rgb rgb-off
