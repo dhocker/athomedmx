@@ -83,7 +83,7 @@ forward at this rate. It’s the clock tick interval. The default step period is
     step-period 0.1
 
 ### Import
-The import statement includes another file into the script file. This works just like a C/C++ include or a Python import
+The import statement includes another file into the script file. This works like a C/C++ include or a Python import
 statement. The content of the imported file is inserted into the script in line.
 
     import filename
@@ -91,7 +91,8 @@ statement. The content of the imported file is inserted into the script in line.
 ### Set
 This statement sets one or more channel value(s) for transmission. Use the send statement to actually send
 the values. This is a bit like committing changes.
-set channel v1...vn
+
+    set channel v1...vn
 
 ### Send
 The send statement sends all accumulated channel values (from set statements) to the DMX controller.
@@ -111,7 +112,7 @@ A script does not have to contain a main loop. If this is the case, the entire s
 the end-of-file is reached, the script will terminate.
 
 ### Main-end
-The main-end statement is to foot of the main loop. When execution reaches the main-end statement,
+The main-end statement is the foot of the main loop. When execution reaches the main-end statement,
 it continues by going back to the main statement.
 
     main-end
@@ -141,13 +142,25 @@ delta value (dv) which is determined by:
 
     dv = (target - current) / (fade-time / step-period)
 
-For each step-period during fade-time, the channel value will be
-changed by one dv value. Note that dv can be positive or negative.
+Example: Assume the current value for channel 1 is 100 and the target value is 200. The fade-time is 1.0 second and
+the step-time is 0.2 second. Substituting, we have:
 
-	fade channel v1...vn
+    dv = (200 - 100) / (1.0 / 0.2) = 20
+
+For each step-period during fade-time, the channel 1 value will be
+incremented by one dv value = 20.
+
+Note that dv can be positive or negative. In the above example, if the current channel 1 value was 200 and 
+the target value was 100, the dv value would be -20. In this case, the channel 1 value would be decreased by 20
+for each step-period.
+
+The fade statement syntax is
+
+	fade channel v1 v2...vn
 
 ### EOF
-When end-of-file is reached, the script terminates.
+When end-of-file is reached, the script terminates. As part of script termination, all DMX channels
+are set to zero.
 
 ### Example
 
@@ -193,8 +206,8 @@ When end-of-file is reached, the script terminates.
             # Immediate changes
             set tp64rgb rgb-off
             set tp64dimmer on
-            send
-            # Values fade from their initial to target values over fadetime
+            # Values fade from their initial to target values over fade-time
+            # This will fade the r and b channels from 0 to 255 over 3 seconds
             fade tp64rgb on 0 on
         step-end
 
