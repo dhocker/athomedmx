@@ -14,19 +14,32 @@
 #
 
 import time
+import datetime
 import logging
 
 logger = logging.getLogger("dmx")
 
 class ScriptCPU:
     def __init__(self, dmxdev, vm, terminate_event):
+        """
+        Constructor
+        :param dmxdev: A DMX device instance
+        :param vm: A script VM instance
+        :param terminate_event: A threading event to be tested for termination
+        :return: None
+        """
         self._dmxdev = dmxdev
         self._vm = vm
         self._terminate_event = terminate_event
+        # This is the equivalent of the next instruction address
         self._stmt_index = 0
         self._send_count = 0
         self._fade_time = 0.0
         self._step_time = 0.0
+        # Runat control
+        self._runat_active = False
+        self._run_end_time = None
+        self._runat_stmt = -1
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -40,7 +53,8 @@ class ScriptCPU:
             "fade": self.fade_stmt,
             "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt,
-            "step-period": self.step_period_stmt
+            "step-period": self.step_period_stmt,
+            "runat": self.runat_stmt
         }
 
     def run(self):
@@ -63,6 +77,7 @@ class ScriptCPU:
                 if next_index < 0:
                     logger.error("Virtual CPU stopped due to error")
                     break
+
                 # End of program check
                 if next_index >= len(self._vm.stmts):
                     logger.info("End of script")
@@ -76,6 +91,10 @@ class ScriptCPU:
 
             # This sets the next statement
             self._stmt_index = next_index
+
+            # End of RunAt program check
+            # This will set the next statement index at end of program time
+            self.runat_time_check()
 
         logger.info("Virtual CPU stopped")
         self._reset()
@@ -105,15 +124,21 @@ class ScriptCPU:
         # occasionally throws an overflow error if something other than a full size message
         # of 512 bytes is sent.
         # This try/catch is here to handle that error.
-        try:
-            self._send_count += 1
-            self._dmxdev.send_multi_value(channel, msg)
-        except Exception as ex:
-            logger.error("Unhandled exception sending DMX message")
-            logger.error(str(ex))
-            logger.error("Send count %d", self._send_count)
-            logger.error(msg)
-            raise ex
+        success = False
+        retry_count = 0
+        while not success:
+            try:
+                self._send_count += 1
+                self._dmxdev.send_multi_value(channel, msg)
+                success = True
+            except Exception as ex:
+                logger.error("Unhandled exception sending DMX message")
+                logger.error(str(ex))
+                logger.error("Send count %d", self._send_count)
+                logger.error(msg)
+                retry_count += 1
+                if retry_count > 5:
+                    raise ex
 
     def set_stmt(self, stmt):
         """
@@ -268,6 +293,10 @@ class ScriptCPU:
             fade_time -= self._vm.step_period_time
             step_time -= self._vm.step_period_time
 
+            # If the RunAt duration has expired, return to the RunAt statement
+            if not self.runat_time_check():
+                return self._stmt_index
+
         # Exit the step
         return self._stmt_index + 1
 
@@ -280,3 +309,60 @@ class ScriptCPU:
         logger.debug(stmt)
         self._vm.step_period_time = float(stmt[1])
         return self._stmt_index + 1
+
+    def runat_stmt(self, stmt):
+        """
+        Run the program beginning at a given time and ending at duration time later.
+        :param stmt: stmt[1] is the start time struct and stmt[2] is the duration
+        time struct.
+        :return: The runat statement does not complete until the specified
+        time arrives.
+        """
+
+        # If we are under RunAt control, ignore
+        if self._runat_active:
+            return self._stmt_index + 1
+
+        now = datetime.datetime.now()
+        run_start_time = datetime.datetime(now.year, now.month, now.day, stmt[1].tm_hour, stmt[1].tm_min)
+        logger.info("Waiting from %s until %s", str(now), str(run_start_time))
+        while not self._terminate_event.isSet():
+            time.sleep(1.0)
+            now = datetime.datetime.now()
+            # As soon as we get the start HH:MM we are ready to run
+            if (now.hour == run_start_time.hour) and (now.minute == run_start_time.minute):
+                # We're now under RunAt control
+                self._runat_active = True
+                self._runat_stmt = self._stmt_index
+                # Set end time
+                self._run_end_time = now + \
+                    datetime.timedelta(seconds=(stmt[2].tm_hour * 60 * 60) + (stmt[2].tm_min * 60) + stmt[2].tm_sec)
+                logger.info("Run program beginning at %s", str(now))
+
+                # Within one minute after run time
+                break
+
+        return self._stmt_index + 1
+
+
+    def runat_time_check(self):
+        """
+        Answers the question: Are we in the RunAt duration?
+        :return: Returns True if we are in the RunAt duration
+        """
+        if self._runat_active:
+            # A RunAt statement is active.
+            # When the duration expires...
+            now = datetime.datetime.now()
+            if (now.hour == self._run_end_time.hour) and (now.minute == self._run_end_time.minute):
+                # Stop running the program and set the stmt index back to the RunAt statement
+                logger.info("Run program ended at %s", str(now))
+                # We reset all DMX channels under the assumption the program will start over
+                self._reset()
+                self._runat_active = False
+                # We want to put the next statement back to the RunAt
+                self._stmt_index = self._runat_stmt
+                return False
+
+        # If no RunAt statement is active, we are always running
+        return True

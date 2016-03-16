@@ -8,16 +8,18 @@
 #   loop statement.
 #
 
-#At 17:00
-
 # Test of import. Brings in definitions used below
 import definitions.dmx
 
 # Initial state (set channel value(s))
-set tp64rgb rgb-off
+#set tp64rgb rgb-off
+set tp64rgb on on on
 set tp64mode rgb-mode
 set tp64dimmer off
 send
+
+# This will run the program every day at 5:00pm for 5 hours
+#RunAt 16:15 0:01
 
 # Main loop
 # The main loop runs until the app is terminated. The main statement ends
@@ -27,30 +29,30 @@ main
     # Each step runs for step-time 5.0
     step default-fade-time default-step-time
         # Immediate changes
-        set tp64rgb rgb-off
+        # set tp64rgb on off on
         set tp64dimmer on
         send
         # Values fade from their initial to target values over fadetime
-        fade tp64rgb on 0 on
+        fade tp64rgb on on off
     step-end
 
-    set tp64rgb rgb-off
+    #set tp64rgb rgb-off
     set tp64dimmer on
     send
 
     step default-fade-time default-step-time
-        fade tp64rgb 0 on on
+        fade tp64rgb off on on
     step-end
 
-    set tp64rgb rgb-off
+    #set tp64rgb rgb-off
     set tp64dimmer on
     send
 
     step default-fade-time default-step-time
-        fade tp64rgb on on 0
+        fade tp64rgb on on on
     step-end
 
-    set tp64dimmer off
+    #set tp64dimmer off
     send
 main-end
 

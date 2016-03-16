@@ -23,5 +23,5 @@ value rgb-mode 0
 # Time definitions
 define default-fade-time 3.0
 define default-step-time 5.0
-define periodtime 0.2
+define periodtime 0.1
 step-period periodtime

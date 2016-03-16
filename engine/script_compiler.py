@@ -13,6 +13,8 @@
 # Script compiler
 #
 
+import time
+import datetime
 import logging
 
 logger = logging.getLogger("dmx")
@@ -27,6 +29,7 @@ class ScriptCompiler:
         self._file_depth = 0
         self._line_number = [0]
         self._file_path = [""]
+        self._runat = False
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -42,7 +45,7 @@ class ScriptCompiler:
             "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt,
             "step-period": self.step_period_stmt,
-            "at": None
+            "runat": self.runat_stmt
         }
 
     def compile(self, script_file):
@@ -409,4 +412,37 @@ class ScriptCompiler:
         self._file_path.pop()
 
         # The cpu will ignore this statement
+        return tokens
+
+    def runat_stmt(self, tokens):
+        """
+        Run the program daily, beginning at a given time and ending an amount
+        of time later
+        :param tokens: Starting time (HH:MM), duration (HH:MM)
+        :return:
+        """
+        if len(tokens) < 3:
+            self.script_error("Missing statement arguments")
+            return None
+        if self._runat:
+            self.script_error("Only one RunAt statement allowed")
+            return None
+
+        # Translate/validate start time
+        try:
+            start_time_struct = time.strptime(tokens[1], "%H:%M")
+        except Exception as ex:
+            self.script_error("Invalid start time")
+            return None
+
+        # Translate/validate duration
+        try:
+            duration_struct = time.strptime(tokens[2], "%H:%M")
+        except Exception as ex:
+            self.script_error("Invalid duration")
+            return None
+
+        tokens[1] = start_time_struct
+        tokens[2] = duration_struct
+        self._runat = True
         return tokens
