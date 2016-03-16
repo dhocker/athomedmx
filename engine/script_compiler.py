@@ -315,7 +315,12 @@ class ScriptCompiler:
         :return:
         """
         # This should point to the main statement
-        self._vm.main_index = len(self._vm.stmts)
+        # Simple test to check for more than one main statement
+        if self._vm.main_index < 0:
+            self._vm.main_index = len(self._vm.stmts)
+        else:
+            self.script_error("Only one main statement can be used")
+            return None
         return tokens
 
     def main_end_stmt(self, tokens):
