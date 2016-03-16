@@ -3,7 +3,8 @@ Copyright © 2016 by Dave Hocker
 
 ## Overview
 AtHomeDMX is designed to run simple DMX controlled light shows. A show is constructed via a relatively simple
-scripting language ([Script Engine](#script-engine)).
+scripting language ([Script Engine](#script-engine)). The original driving force for the program was for
+something to run a holiday lighting program.
 
 ## License
 
@@ -31,7 +32,7 @@ execution phase. Because of the two phase design, definitional statements (chann
 compiled so that the last definition wins. That is, if a name is defined multiple times, the last
 definition wins.
 
-### Language
+## Script File
 A script file contains any number of statements. 
 
 * Each line is a statement.
@@ -39,14 +40,16 @@ A script file contains any number of statements.
 * Blank lines are ignored.
 * Everything is case insensitive.
 
-### Statements
+## Statements
 
-### Statement Syntax
+### Syntax
 A statement consists of a number of blank delimited tokens. Except for the # character, there
 are no special rules for characters. The single, double quote and all other special characters are treated
 just like alpha-numeric characters.
 
 The first token of a statement is the statement identifier (a.k.a. an opcode or command).
+
+    statement [argument [argument...argument]]
 
 ### Names
 Several statements involve the defintion of a name (a constant). The only rule for a name is that it
@@ -99,6 +102,27 @@ The send statement sends all accumulated channel values (from set statements) to
 Essentially, the send statement acts like a commit action.
 
     send
+
+### RunAt
+The RunAt statement is designed for running a lighting program on a daily basis. This is the kind of thing that
+you would do for a holiday lighting program. The RunAt statement allows you to specify a time of day when the
+program is to run and a duration of time for it to run.
+
+    runat hh:mm hh:mm
+    
+The first argument is the time of day when the program is to run. The second argument is duration the
+program will run. When the duration expires, the program goes back to the runat statement, thus waiting 
+until the next day. All times are in 24 clock format.
+
+When the RunAt statement executes, it puts the script into a wait state where it waits for the time of day 
+to arrive.
+
+Example
+
+    runat 18:00 04:00
+
+This example waits until 18:00 (6:00pm) at which time it runs the program. When 22:00 (10:00pm) arrives
+script execution returns to the runat statement where it will wait for the next day to arrive.
 
 ### Main (Loop)
 The script engine model includes the ability to run a lighting program "forever". Here, forever means until the
