@@ -79,8 +79,9 @@ class ScriptCPU:
                     break
 
                 # End of program check
-                if next_index >= len(self._vm.stmts):
-                    logger.info("End of script")
+                next_index = self.end_of_program_check(next_index)
+                if next_index > len(self._vm.stmts):
+                    # Time to terminate the script
                     break
             else:
                 # Unrecognized statements are treated as no-ops.
@@ -344,7 +345,6 @@ class ScriptCPU:
 
         return self._stmt_index + 1
 
-
     def runat_time_check(self):
         """
         Answers the question: Are we in the RunAt duration?
@@ -366,3 +366,17 @@ class ScriptCPU:
 
         # If no RunAt statement is active, we are always running
         return True
+
+    def end_of_program_check(self, next_index):
+        # End of program occurs when the next statement index is past
+        # the end of the statement list
+        if next_index >= len(self._vm.stmts):
+            # If RunAt is active, make the next statement the RunAt statement
+            if self._runat_active:
+                next_index = self._runat_stmt
+                self._reset()
+            else:
+                # Otherwise return the out of bounds index
+                logger.info("End of script")
+
+        return next_index

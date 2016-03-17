@@ -106,7 +106,7 @@ Essentially, the send statement acts like a commit action.
 ### RunAt
 The RunAt statement is designed for running a lighting program on a daily basis. This is the kind of thing that
 you would do for a holiday lighting program. The RunAt statement allows you to specify a time of day when the
-program is to run and a duration of time for it to run.
+program is to run and a duration of time for it to run. There can only be one RunAt statement in a script.
 
     runat hh:mm hh:mm
     
@@ -126,7 +126,8 @@ script execution returns to the runat statement where it will wait for the next 
 
 ### Main (Loop)
 The script engine model includes the ability to run a lighting program "forever". Here, forever means until the
-AtHomeDMX program is terminated. The main statement defines the beginning of a set of repeated statements. If you 
+AtHomeDMX program is terminated or until the RunAt duration expires. 
+The main statement defines the beginning of a set of repeated statements. If you 
 are a programmer, think of the main statement as the equivalent of a "while true" statement. There can be only one
 main statement. Think of the body of the main loop as the main part of the lighting program.
     
