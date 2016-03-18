@@ -324,9 +324,17 @@ class ScriptCPU:
         if self._runat_active:
             return self._stmt_index + 1
 
+        # Determine the start time
         now = datetime.datetime.now()
         run_start_time = datetime.datetime(now.year, now.month, now.day, stmt[1].tm_hour, stmt[1].tm_min)
+        # If the start time is earlier than now, adjust to tomorrow
+        if run_start_time < now:
+            # Start is tomorrow
+            run_start_time += datetime.timedelta(days=1)
+
         logger.info("Waiting from %s until %s", str(now), str(run_start_time))
+
+        # Wait for start time to arrive. Break out on termination signal.
         while not self._terminate_event.isSet():
             time.sleep(1.0)
             now = datetime.datetime.now()
@@ -367,14 +375,38 @@ class ScriptCPU:
         # If no RunAt statement is active, we are always running
         return True
 
+    def wait_for_runat_duration(self):
+        """
+        Wait until the RunAt duration expires.
+        :return:
+        """
+        logger.info("Waiting for RunAt duration until %s", str(self._run_end_time))
+        while not self._terminate_event.isSet():
+            time.sleep(1.0)
+            now = datetime.datetime.now()
+            # As soon as we get the start HH:MM we are ready to run
+            if (now.hour == self._run_end_time.hour) and (now.minute == self._run_end_time.minute):
+                break
+
     def end_of_program_check(self, next_index):
-        # End of program occurs when the next statement index is past
-        # the end of the statement list
+        """
+        End of program occurs when the next statement index is past
+        the end of the statement list. However, if RunAt is in effect,
+        end of program causes execution to go back to the RunAt statement.
+        :param next_index:
+        :return: Returns the next statement index to be executed. If RunAt
+        is effective, the next index will point to the RunAt statement.
+        If RunAt is not in effect, the next index will be the first statement
+        past the end of the statement list.
+        """
         if next_index >= len(self._vm.stmts):
             # If RunAt is active, make the next statement the RunAt statement
+            # We have to wait for the RunAt duration to expire before
+            # going back to the RunAt statement.
             if self._runat_active:
                 next_index = self._runat_stmt
                 self._reset()
+                self.wait_for_runat_duration()
             else:
                 # Otherwise return the out of bounds index
                 logger.info("End of script")

@@ -1,0 +1,41 @@
+#
+# DMX test script
+#
+# Notes
+#   All keywords, names are case insensitive.
+#   The script starts with the initialization/setup phase
+#   which includes all of the statements up to the
+#   loop statement.
+#
+
+# Test of import. Brings in definitions used below
+import definitions.dmx
+
+# Initial state (set channel value(s))
+set tp64rgb on on on
+set tp64mode rgb-mode
+set tp64dimmer off
+send
+
+# This will run the program every day at 5:00pm for 5 hours
+RunAt 17:01 0:01
+
+# Each step runs for step-time 5.0
+step default-fade-time default-step-time
+    # Immediate changes
+    set tp64rgb on off on
+    set tp64dimmer on
+    send
+    # Values fade from their initial to target values over fadetime
+    fade tp64rgb on on off
+step-end
+
+# Wait for end of run time
+step 10.0 60.0
+step-end
+
+# If there is no loop statement, the script ends when there
+# are no more statements.
+
+# In this case we should go back to the RunAt statement.
+# It will keep that up until the RunAt time passes.
