@@ -29,7 +29,8 @@ class ScriptCompiler:
         self._file_depth = 0
         self._line_number = [0]
         self._file_path = [""]
-        self._runat = False
+        self._do_for = False
+        self._do_at = False
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -45,7 +46,10 @@ class ScriptCompiler:
             "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt,
             "step-period": self.step_period_stmt,
-            "runat": self.runat_stmt
+            "do-for": self.do_for_stmt,
+            "do-for-end": self.do_for_end_stmt,
+            "do-at": self.do_at_stmt,
+            "do-at-end": self.do_at_end_stmt
         }
 
     def compile(self, script_file):
@@ -73,6 +77,8 @@ class ScriptCompiler:
             tokens = stmt.lower().split()
             valid = self.compile_statement(stmt, tokens)
             stmt = sf.readline()
+
+        # TODO Validate that all script blocks are closed
 
         sf.close()
 
@@ -414,35 +420,72 @@ class ScriptCompiler:
         # The cpu will ignore this statement
         return tokens
 
-    def runat_stmt(self, tokens):
+    def do_for_stmt(self, tokens):
         """
-        Run the program daily, beginning at a given time and ending an amount
-        of time later
-        :param tokens: Starting time (HH:MM), duration (HH:MM)
+        Execute a script block for a given period of time
+        :param tokens: Duration (HH:MM)
         :return:
         """
-        if len(tokens) < 3:
-            self.script_error("Missing statement arguments")
+        if len(tokens) < 2:
+            self.script_error("Missing statement argument")
             return None
-        if self._runat:
-            self.script_error("Only one RunAt statement allowed")
-            return None
-
-        # Translate/validate start time
-        try:
-            start_time_struct = time.strptime(tokens[1], "%H:%M")
-        except Exception as ex:
-            self.script_error("Invalid start time")
+        if self._do_for:
+            self.script_error("Only one Do-for statement can be active")
             return None
 
         # Translate/validate duration
         try:
-            duration_struct = time.strptime(tokens[2], "%H:%M")
+            duration_struct = time.strptime(tokens[1], "%H:%M:%S")
         except Exception as ex:
             self.script_error("Invalid duration")
             return None
 
+        tokens[1] = duration_struct
+        self._do_for = True
+        return tokens
+
+    def do_for_end_stmt(self, tokens):
+        """
+        Marks the end/foot of a block of code headed by a Do-For statement.
+        :param tokens:
+        :return:
+        """
+        if not self._do_for:
+            self.script_error("No matching Do-For is open")
+            return None
+        return tokens
+
+    def do_at_stmt(self, tokens):
+        """
+        Executes a block of script when a given time-of-day arrives.
+        :param tokens: tokens[1] is the time in HH:MM format (24 hour clock).
+        :return:
+        """
+        if len(tokens) < 2:
+            self.script_error("Missing statement arguments")
+            return None
+        if self._do_at:
+            self.script_error("Only one Do-At statement is allowed")
+            return None
+
+        # Translate/validate start time
+        try:
+            start_time_struct = time.strptime(tokens[1], "%H:%M:%S")
+        except Exception as ex:
+            self.script_error("Invalid start time")
+            return None
+
         tokens[1] = start_time_struct
-        tokens[2] = duration_struct
-        self._runat = True
+        self._do_at = True
+        return tokens
+
+    def do_at_end_stmt(self, tokens):
+        """
+        Marks the end/foot of a block of code headed by a Do-At statement.
+        :param tokens:
+        :return:
+        """
+        if not self._do_at:
+            self.script_error("No matching Do-At is open")
+            return None
         return tokens

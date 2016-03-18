@@ -36,10 +36,14 @@ class ScriptCPU:
         self._send_count = 0
         self._fade_time = 0.0
         self._step_time = 0.0
-        # Runat control
-        self._runat_active = False
-        self._run_end_time = None
-        self._runat_stmt = -1
+        # Do-For control
+        self._do_for_active = False
+        self._do_for_elapsed_time = None
+        self._do_for_start_time = None
+        self._do_for_stmt = -1
+        # Do-At control
+        self._do_at_active = False
+        self._do_at_stmt = -1
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -54,7 +58,10 @@ class ScriptCPU:
             "step-end": self.step_end_stmt,
             "main-end": self.main_end_stmt,
             "step-period": self.step_period_stmt,
-            "runat": self.runat_stmt
+            "do-for": self.do_for_stmt,
+            "do-for-end": self.do_for_end_stmt,
+            "do-at": self.do_at_stmt,
+            "do-at-end": self.do_at_end_stmt
         }
 
     def run(self):
@@ -72,16 +79,11 @@ class ScriptCPU:
             # Ignore statements with no handler
             if self._valid_stmts[stmt[0]] is not None:
                 # The statement execution sets the next statement index
+                logger.debug(stmt)
                 next_index = self._valid_stmts[stmt[0]](stmt)
                 # If the statement threw an exception end the script
                 if next_index < 0:
                     logger.error("Virtual CPU stopped due to error")
-                    break
-
-                # End of program check
-                next_index = self.end_of_program_check(next_index)
-                if next_index > len(self._vm.stmts):
-                    # Time to terminate the script
                     break
             else:
                 # Unrecognized statements are treated as no-ops.
@@ -90,12 +92,14 @@ class ScriptCPU:
                 # has not yet been implemented.
                 next_index = self._stmt_index + 1
 
+            # End of program check
+            next_index = self.end_of_program_check(next_index)
+            if next_index >= len(self._vm.stmts):
+                # Time to terminate the script
+                break
+
             # This sets the next statement
             self._stmt_index = next_index
-
-            # End of RunAt program check
-            # This will set the next statement index at end of program time
-            self.runat_time_check()
 
         logger.info("Virtual CPU stopped")
         self._reset()
@@ -147,7 +151,6 @@ class ScriptCPU:
         :param stmt:
         :return:
         """
-        logger.debug(stmt)
         # stmt[1] is the channel (1-512)
         # stmt[2:] is/are the value(s)
         # copy the statement values to the current message register
@@ -166,7 +169,6 @@ class ScriptCPU:
         :param stmt:
         :return:
         """
-        logger.debug(stmt)
         # stmt[1] is the channel (1-512)
         # stmt[2:] is/are the value(s)
         # copy the statement values to the target message register
@@ -183,7 +185,6 @@ class ScriptCPU:
         :param stmt:
         :return:
         """
-        logger.debug(stmt)
         # Send the entire current message register
         self._send_message(1, self._vm.current)
 
@@ -195,7 +196,6 @@ class ScriptCPU:
         :param stmt:
         :return:
         """
-        logger.debug(stmt)
         return self._stmt_index + 1
 
     def main_end_stmt(self, stmt):
@@ -204,7 +204,6 @@ class ScriptCPU:
         :param stmt:
         :return:
         """
-        logger.debug(stmt)
         # This is the loop point for the main loop
         return self._vm.main_index
 
@@ -214,7 +213,6 @@ class ScriptCPU:
         :param stmt: step fade-time step-time
         :return:
         """
-        logger.debug(stmt)
         # Capture times for step-end
         self._fade_time = float(stmt[1])
         self._step_time = float(stmt[2])
@@ -230,8 +228,6 @@ class ScriptCPU:
         """
 
         # TODO This is messy and needs to be refactored/cleaned up
-
-        logger.debug(stmt)
 
         # Send the entire current message register
         # This amounts to the starting point for the step
@@ -294,10 +290,6 @@ class ScriptCPU:
             fade_time -= self._vm.step_period_time
             step_time -= self._vm.step_period_time
 
-            # If the RunAt duration has expired, return to the RunAt statement
-            if not self.runat_time_check():
-                return self._stmt_index
-
         # Exit the step
         return self._stmt_index + 1
 
@@ -307,92 +299,118 @@ class ScriptCPU:
         :param stmt:
         :return:
         """
-        logger.debug(stmt)
         self._vm.step_period_time = float(stmt[1])
         return self._stmt_index + 1
 
-    def runat_stmt(self, stmt):
+    def do_for_stmt(self, stmt):
         """
-        Run the program beginning at a given time and ending at duration time later.
-        :param stmt: stmt[1] is the start time struct and stmt[2] is the duration
-        time struct.
-        :return: The runat statement does not complete until the specified
-        time arrives.
+        Execute a script block for a given duration of time.
+        :param stmt: stmt[1] is the duration time struct.
+        :return:
         """
 
-        # If we are under RunAt control, ignore
-        if self._runat_active:
+        # If we are under Do-For control, ignore. Should be prevented at compile phase.
+        if self._do_for_active:
+            return self._stmt_index + 1
+
+        self._do_for_active = True
+        self._do_for_stmt = self._stmt_index
+
+        # Determine the end time
+        # TODO Consider using the start time and a timedelta that allows second accuracy
+        now = datetime.datetime.now()
+        self._do_for_elapsed_time = datetime.timedelta(seconds=(stmt[1].tm_hour * 60 * 60) + (stmt[1].tm_min * 60) + stmt[1].tm_sec)
+        self._do_for_start_time = now
+        logger.info("Do-For %s", str(self._do_for_elapsed_time))
+
+        return self._stmt_index + 1
+
+    def do_for_end_stmt(self, stmt):
+        """
+        Foot of Do-For loop. Repeat script block until time expires.
+        :return:
+        """
+        if self._do_for_active:
+            # A Do-For statement is active.
+            # When the duration expires...
+            now = datetime.datetime.now()
+            elapsed = now - self._do_for_start_time
+            # TODO Include seconds in duration
+            if elapsed >= self._do_for_elapsed_time:
+                # Stop running the script block and set the stmt index to the next statement
+                logger.info("Do-For loop ended at %s", str(now))
+                self._do_for_active = False
+                next_stmt = self._stmt_index + 1
+            else:
+                # Loop back to top of script block
+                next_stmt = self._do_for_stmt + 1
+        else:
+            next_stmt = self._stmt_index + 1
+
+        return next_stmt
+
+    def do_at_stmt(self, stmt):
+        """
+        Executes a script block when a given time-of-day arrives.
+        :param stmt: stmt[1] is a tm_struct defining the time of day. The hour and minute is
+        all that is used.
+        :return:
+        """
+
+        # If we are under Do-At control, ignore
+        if self._do_at_active:
             return self._stmt_index + 1
 
         # Determine the start time
         now = datetime.datetime.now()
-        run_start_time = datetime.datetime(now.year, now.month, now.day, stmt[1].tm_hour, stmt[1].tm_min)
+        run_start_time = datetime.datetime(now.year, now.month, now.day, stmt[1].tm_hour, stmt[1].tm_min, stmt[1].tm_sec)
         # If the start time is earlier than now, adjust to tomorrow
         if run_start_time < now:
             # Start is tomorrow
             run_start_time += datetime.timedelta(days=1)
 
-        logger.info("Waiting from %s until %s", str(now), str(run_start_time))
+        # We're now under Do-At control
+        self._do_at_active = True
+        self._do_at_stmt = self._stmt_index
+
+        logger.info("Waiting until %s...", str(run_start_time))
 
         # Wait for start time to arrive. Break out on termination signal.
         while not self._terminate_event.isSet():
             time.sleep(1.0)
             now = datetime.datetime.now()
-            # As soon as we get the start HH:MM we are ready to run
-            if (now.hour == run_start_time.hour) and (now.minute == run_start_time.minute):
-                # We're now under RunAt control
-                self._runat_active = True
-                self._runat_stmt = self._stmt_index
-                # Set end time
-                self._run_end_time = now + \
-                    datetime.timedelta(seconds=(stmt[2].tm_hour * 60 * 60) + (stmt[2].tm_min * 60) + stmt[2].tm_sec)
-                logger.info("Run program beginning at %s", str(now))
+            # The deltatime will be negative until we cross the Do-At time
+            dt = now - run_start_time
+            if (dt.days == 0) and (dt.seconds >= 0):
+                logger.info("Do-At begins at %s", str(now))
 
-                # Within one minute after run time
+                # On to the next sequential statement
                 break
 
+        # Execution continues at the next statement after the Do-At
         return self._stmt_index + 1
 
-    def runat_time_check(self):
+    def do_at_end_stmt(self, stmt):
         """
-        Answers the question: Are we in the RunAt duration?
-        :return: Returns True if we are in the RunAt duration
-        """
-        if self._runat_active:
-            # A RunAt statement is active.
-            # When the duration expires...
-            now = datetime.datetime.now()
-            if (now.hour == self._run_end_time.hour) and (now.minute == self._run_end_time.minute):
-                # Stop running the program and set the stmt index back to the RunAt statement
-                logger.info("Run program ended at %s", str(now))
-                # We reset all DMX channels under the assumption the program will start over
-                self._reset()
-                self._runat_active = False
-                # We want to put the next statement back to the RunAt
-                self._stmt_index = self._runat_stmt
-                return False
-
-        # If no RunAt statement is active, we are always running
-        return True
-
-    def wait_for_runat_duration(self):
-        """
-        Wait until the RunAt duration expires.
+        Serves as the foot of the Do-At loop.
+        :param stmt:
         :return:
         """
-        logger.info("Waiting for RunAt duration until %s", str(self._run_end_time))
-        while not self._terminate_event.isSet():
-            time.sleep(1.0)
-            now = datetime.datetime.now()
-            # As soon as we get the start HH:MM we are ready to run
-            if (now.hour == self._run_end_time.hour) and (now.minute == self._run_end_time.minute):
-                break
+        if not self._do_at_active:
+            logger.info("No matching Do-At statement")
+            return -1
+
+        # Reset state. Turn off all DMX channels.
+        self._do_at_active = False
+        self._reset()
+
+        # Execution returns to the matching Do-At statement
+        return self._do_at_stmt
 
     def end_of_program_check(self, next_index):
         """
         End of program occurs when the next statement index is past
-        the end of the statement list. However, if RunAt is in effect,
-        end of program causes execution to go back to the RunAt statement.
+        the end of the statement list.
         :param next_index:
         :return: Returns the next statement index to be executed. If RunAt
         is effective, the next index will point to the RunAt statement.
@@ -400,15 +418,6 @@ class ScriptCPU:
         past the end of the statement list.
         """
         if next_index >= len(self._vm.stmts):
-            # If RunAt is active, make the next statement the RunAt statement
-            # We have to wait for the RunAt duration to expire before
-            # going back to the RunAt statement.
-            if self._runat_active:
-                next_index = self._runat_stmt
-                self._reset()
-                self.wait_for_runat_duration()
-            else:
-                # Otherwise return the out of bounds index
-                logger.info("End of script")
+            logger.info("End of script")
 
         return next_index

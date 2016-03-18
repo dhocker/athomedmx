@@ -18,43 +18,46 @@ set tp64mode rgb-mode
 set tp64dimmer off
 send
 
-# This will run the program every day at 5:00pm for 5 hours
-#RunAt 16:15 0:01
+# Main do loop
+# The main do loop runs until the app is terminated.
+## This will run the program every day at hh:mm:ss (24 hour clock)
+Do-At 14:31:00
 
-# Main loop
-# The main loop runs until the app is terminated. The main statement ends
-# the intialization/setup phase which is all the statements
-# that precede the main statement.
-main
-    # Each step runs for step-time 5.0
-    step default-fade-time default-step-time
-        # Immediate changes
-        # set tp64rgb on off on
+    # Execute the script block for hh:mm:ss amount of time
+    Do-For 00:00:30
+
+        # Each step runs for step-time 5.0
+        step default-fade-time default-step-time
+            # Immediate changes
+            # set tp64rgb on off on
+            set tp64dimmer on
+            send
+            # Values fade from their initial to target values over fadetime
+            fade tp64rgb on on off
+        step-end
+
+        #set tp64rgb rgb-off
         set tp64dimmer on
         send
-        # Values fade from their initial to target values over fadetime
-        fade tp64rgb on on off
-    step-end
 
-    #set tp64rgb rgb-off
-    set tp64dimmer on
-    send
+        step default-fade-time default-step-time
+            fade tp64rgb off on on
+        step-end
 
-    step default-fade-time default-step-time
-        fade tp64rgb off on on
-    step-end
+        #set tp64rgb rgb-off
+        set tp64dimmer on
+        send
 
-    #set tp64rgb rgb-off
-    set tp64dimmer on
-    send
+        step default-fade-time default-step-time
+            fade tp64rgb on on on
+        step-end
 
-    step default-fade-time default-step-time
-        fade tp64rgb on on on
-    step-end
+        #set tp64dimmer off
+        send
 
-    #set tp64dimmer off
-    send
-main-end
+    Do-For-End
+
+Do-At-End
 
 # If there is no loop statement, the script ends when there
 # are no more statements.
