@@ -103,44 +103,55 @@ Essentially, the send statement acts like a commit action.
 
     send
 
-### RunAt
-The RunAt statement is designed for running a lighting program on a daily basis. This is the kind of thing that
-you would do for a holiday lighting program. The RunAt statement allows you to specify a time of day when the
-program is to run and a duration of time for it to run. There can only be one RunAt statement in a script.
+### Do-At
+The Do-At statement is designed for running a lighting program on a daily basis. This is the kind of thing that
+you would do for a holiday lighting program. The Do-At statement allows you to specify a time of day when the
+program is to run. The lighting program is the script block between the Do-At statement
+and its corresponding Do-At-End statement. There can only be one Do-At statement in a script.
 
-    runat hh:mm hh:mm
+    do-at hh:mm:ss
+        # script block statements
+    do-at-end
     
-The first argument is the time of day when the program is to run. The second argument is duration the
-program will run. When the duration expires, the program goes back to the runat statement, thus waiting 
-until the next day. All times are in 24 clock format.
-
-When the RunAt statement executes, it puts the script into a wait state where it waits for the time of day 
-to arrive.
+The argument is the time of day (24 hour clock) when the program is to run. When the Do-At statement executes, 
+it puts the script into a wait state where it waits for the time of day to arrive.
 
 Example
 
-    runat 18:00 04:00
+    do-at 18:00:00
+        # script block statements
+    do-at-end
 
-This example waits until 18:00 (6:00pm) at which time it runs the program. When 22:00 (10:00pm) arrives
-script execution returns to the runat statement where it will wait for the next day to arrive.
+This example waits until 18:00:00 (6:00pm) at which time it runs the script block.
 
-### Main (Loop)
-The script engine model includes the ability to run a lighting program "forever". Here, forever means until the
-AtHomeDMX program is terminated or until the RunAt duration expires. 
-The main statement defines the beginning of a set of repeated statements. If you 
-are a programmer, think of the main statement as the equivalent of a "while true" statement. There can be only one
-main statement. Think of the body of the main loop as the main part of the lighting program.
+### Do-At-End
+The Do-At-End statement serves as the foot of the Do-At loop or the end of the Do-At block.
+When script execution reaches the Do-At-End statement, all DMX channels are reset and 
+execution returns to the corresponding Do-At statement.
+
+    do-at-end
+
+### Do-For
+The Do-For statement executes a script block for a given period of time. The script block is the
+set of statements between the Do-For statement and its corresponding Do-For-End statement.
     
-    main
+    do-for hh:mm:ss
+        # script block statements
+    do-for-end
     
-A script does not have to contain a main loop. If this is the case, the entire script will execute once and when
-the end-of-file is reached, the script will terminate.
+The argument is a duration in hours, minutes and seconds.
 
-### Main-end
-The main-end statement is the foot of the main loop. When execution reaches the main-end statement,
-it continues by going back to the main statement.
+Currently, Do-For statements cannot be nested.
 
-    main-end
+### Do-For-End
+The Do-For-End statement is the foot of the Do-For loop. When execution reaches the Do-For-End statement,
+the elapsed time since the entry into the Do-For loop is evaluated. If the elapsed time is less than
+the Do-For duration, execution returns to the next statement after the Do-For. If the elapsed time
+is greater than or equal to the Do-For duration, execution continues with the statement after
+the Do-For-End. Note that with this behavior, the time spent in the loop may actually be longer than
+the Do-For duration. This is completely dependent on how long it takes to execute the script block.
+
+    do-for-end
 
 ### Step
 Step starts the definition of what is to be done in a step. A step consists of a fade-time and a step-time.
@@ -183,7 +194,7 @@ The fade statement syntax is
 
 	fade channel v1 v2...vn
 
-### EOF
+### Script File EOF
 When end-of-file is reached, the script terminates. As part of script termination, all DMX channels
 are set to zero.
 
@@ -219,42 +230,43 @@ are set to zero.
     set tp64dimmer off
     send
     
-    # Main loop
-    # The main loop runs until the app is terminated.
-    # This loop contains three steps with a step-time of 5.0 seconds.
-    # That means one pass through the main loop will take 3 * 5.0 = 15.0 seconds.
-    # Note that indention is not required, but it does improve readability.
-    main
-        # Each step runs for the step-time
-        # Step 1
-        step default-fade-time default-step-time
-            # Immediate changes
+    do-at 18:30:00   
+        # This one hour loop contains three steps with a step-time of 5.0 seconds.
+        # That means one pass through the main loop will take 3 * 5.0 = 15.0 seconds.
+        # Note that indention is not required, but it does improve readability.
+        do-for 01:00:00
+            # Each step runs for the step-time
+            # Step 1
+            step default-fade-time default-step-time
+                # Immediate changes
+                set tp64rgb rgb-off
+                set tp64dimmer on
+                # Values fade from their initial to target values over fade-time
+                # This will fade the r and b channels from 0 to 255 over 3 seconds
+                fade tp64rgb on 0 on
+            step-end
+    
+            # Intervening statements
             set tp64rgb rgb-off
             set tp64dimmer on
-            # Values fade from their initial to target values over fade-time
-            # This will fade the r and b channels from 0 to 255 over 3 seconds
-            fade tp64rgb on 0 on
-        step-end
-
-        # Intervening statements
-        set tp64rgb rgb-off
-        set tp64dimmer on
-        send
+            send
+        
+            # Step 2
+            step default-fade-time default-step-time
+                fade tp64rgb 0 on on
+            step-end
+        
+            set tp64rgb rgb-off
+            set tp64dimmer on
+            send
+        
+            # Step 3
+            step default-fade-time default-step-time
+                fade tp64rgb on on 0
+            step-end
+        
+            set tp64dimmer off
+            send
+        do-for-end
+    do-at-end
     
-        # Step 2
-        step default-fade-time default-step-time
-            fade tp64rgb 0 on on
-        step-end
-    
-        set tp64rgb rgb-off
-        set tp64dimmer on
-        send
-    
-        # Step 3
-        step default-fade-time default-step-time
-            fade tp64rgb on on 0
-        step-end
-    
-        set tp64dimmer off
-        send
-    main-end
