@@ -21,10 +21,11 @@ send
 # Main do loop
 # The main do loop runs until the app is terminated.
 ## This will run the program every day at hh:mm:ss (24 hour clock)
-Do-At 14:31:00
+#Do-At 14:31:00
+do-forever
 
     # Execute the script block for hh:mm:ss amount of time
-    Do-For 00:00:30
+    #Do-For 00:00:30
 
         # Each step runs for step-time 5.0
         step default-fade-time default-step-time
@@ -55,9 +56,12 @@ Do-At 14:31:00
         #set tp64dimmer off
         send
 
-    Do-For-End
+    #Do-For-End
 
-Do-At-End
+#Do-At-End
+    #pause 00:00:05
+    reset
+do-forever-end
 
 # If there is no loop statement, the script ends when there
 # are no more statements.

@@ -31,6 +31,7 @@ class ScriptCompiler:
         self._file_path = [""]
         self._do_for = False
         self._do_at = False
+        self._do_forever = False
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -49,7 +50,11 @@ class ScriptCompiler:
             "do-for": self.do_for_stmt,
             "do-for-end": self.do_for_end_stmt,
             "do-at": self.do_at_stmt,
-            "do-at-end": self.do_at_end_stmt
+            "do-at-end": self.do_at_end_stmt,
+            "do-forever": self.do_forever_stmt,
+            "do-forever-end": self.do_forever_end_stmt,
+            "pause": self.pause_stmt,
+            "reset": self.reset_stmt
         }
 
     def compile(self, script_file):
@@ -488,4 +493,50 @@ class ScriptCompiler:
         if not self._do_at:
             self.script_error("No matching Do-At is open")
             return None
+        return tokens
+
+    def do_forever_stmt(self, tokens):
+        """
+        Marks the beginning of a do-forever block.
+        """
+        if self._do_forever:
+            self.script_error("Only one Do-Forever statement is allowed")
+            return None
+        self._do_forever = True
+        return tokens
+
+    def do_forever_end_stmt(self, tokens):
+        """
+        Marks the end/foot of a block of code headed by a Do-Forever statement.
+        :param tokens:
+        :return:
+        """
+        if not self._do_forever:
+            self.script_error("No matching Do-Forever is open")
+            return None
+        return tokens
+
+    def pause_stmt(self, tokens):
+        """
+        pause hh:mm:ss
+        Pauses script execution for a specified amount of time.
+        """
+        if len(tokens) < 2:
+            self.script_error("Missing statement arguments")
+            return None
+
+        # Translate/validate pause time
+        try:
+            pause_struct = time.strptime(tokens[1], "%H:%M:%S")
+        except Exception as ex:
+            self.script_error("Invalid pause time")
+            return None
+
+        tokens[1] = pause_struct
+        return tokens
+
+    def reset_stmt(self, tokens):
+        """
+        Sends zeroes to all DMX channels.
+        """
         return tokens

@@ -38,6 +38,7 @@ A script file contains any number of statements.
 * Each line is a statement.
 * Leading and trailing blanks are ignored.
 * Blank lines are ignored.
+* Lines that begin with a # are ignored.
 * Everything is case insensitive.
 
 ## Statements
@@ -193,6 +194,30 @@ for each step-period.
 The fade statement syntax is
 
 	fade channel v1 v2...vn
+
+### Do-forever
+The do-forever statement is the script equivalent of the C/C++ "while true" statement. The block of script
+following the do-forever statement is executed until the app is terminated.
+
+    do-forever
+        # Block of statements
+    do-forever-end
+
+### Do-forever-end
+The do-forever-end statement is the foot of the do-forever loop. When the statement executes, it sets the next
+statement to the statement following the corresponding do-forever statement.
+
+    do-forever-end
+
+### Pause
+Pause suspends the execution of the script for the specified amount of time.
+
+    pause hh:mm:ss
+    
+### Reset
+Reset sends zero values to all 512 DMX channels.
+
+    reset
 
 ### Script File EOF
 When end-of-file is reached, the script terminates. As part of script termination, all DMX channels

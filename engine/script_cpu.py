@@ -44,6 +44,8 @@ class ScriptCPU:
         # Do-At control
         self._do_at_active = False
         self._do_at_stmt = -1
+        # Do-forever control
+        self._do_forever_stmt = -1
 
         # Valid statements and their handlers
         self._valid_stmts = {
@@ -61,7 +63,11 @@ class ScriptCPU:
             "do-for": self.do_for_stmt,
             "do-for-end": self.do_for_end_stmt,
             "do-at": self.do_at_stmt,
-            "do-at-end": self.do_at_end_stmt
+            "do-at-end": self.do_at_end_stmt,
+            "do-forever": self.do_forever_stmt,
+            "do-forever-end": self.do_forever_end_stmt,
+            "pause": self.pause_stmt,
+            "reset": self.reset_stmt
         }
 
     def run(self):
@@ -421,3 +427,47 @@ class ScriptCPU:
             logger.info("End of script")
 
         return next_index
+
+    def do_forever_stmt(self, stmt):
+        """
+        Executes the following script block until the program is terminated.
+        """
+        # There is no error checking here because it is all done in the compile phase.
+        self._do_forever_stmt = self._stmt_index
+
+        # Execution continues at the next statement after the Do-Forever
+        return self._stmt_index + 1
+
+    def do_forever_end_stmt(self, stmt):
+        """
+        Foot of the the do-forever block
+        """
+        return self._do_forever_stmt
+
+    def pause_stmt(self, stmt):
+        """
+        Pause the script for a given amount of time
+        """
+        # Determine the time when the pause will end
+        now = datetime.datetime.now()
+        pause_time = datetime.timedelta(
+            seconds=(stmt[1].tm_hour * 60 * 60) + (stmt[1].tm_min * 60) + stmt[1].tm_sec)
+        logger.info("Pausing for %s", str(pause_time))
+
+        end_time = datetime.datetime.now() + pause_time
+        logger.info("Pause ends at %s", str(end_time))
+
+        # Wait for end of pause time to arrive. Break out on termination signal.
+        now = datetime.datetime.now()
+        while (not self._terminate_event.isSet()) and (now <= end_time):
+            time.sleep(1.0)
+            now = datetime.datetime.now()
+
+        return self._stmt_index + 1
+
+    def reset_stmt(self, stmt):
+        """
+        Reset all DMX channels by sending zeroes
+        """
+        self._reset()
+        return self._stmt_index + 1
