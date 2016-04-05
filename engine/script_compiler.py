@@ -41,11 +41,9 @@ class ScriptCompiler:
             "define": self.define_stmt,
             "import": self.import_stmt,
             "send": self.send_stmt,
-            "main": self.main_stmt,
             "step": self.step_stmt,
             "fade": self.fade_stmt,
             "step-end": self.step_end_stmt,
-            "main-end": self.main_end_stmt,
             "step-period": self.step_period_stmt,
             "do-for": self.do_for_stmt,
             "do-for-end": self.do_for_end_stmt,
@@ -318,29 +316,6 @@ class ScriptCompiler:
         """
         send (no arguments)
         :param tokens: None required, all ignored
-        :return:
-        """
-        return tokens
-
-    def main_stmt(self, tokens):
-        """
-        main loop point (no arguments)
-        :param tokens:
-        :return:
-        """
-        # This should point to the main statement
-        # Simple test to check for more than one main statement
-        if self._vm.main_index < 0:
-            self._vm.main_index = len(self._vm.stmts)
-        else:
-            self.script_error("Only one main statement can be used")
-            return None
-        return tokens
-
-    def main_end_stmt(self, tokens):
-        """
-        main loop end point (no arguments)
-        :param tokens:
         :return:
         """
         return tokens
