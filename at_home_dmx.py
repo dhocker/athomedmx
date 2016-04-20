@@ -17,9 +17,11 @@
 # along with this program (the LICENSE file).  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import server.SocketServerThread as SocketServerThread
 import configuration
 import app_logger
 import engine.dmx_engine
+import engine.dmx_client
 import disclaimer.disclaimer
 import logging
 import signal
@@ -32,10 +34,17 @@ import sys
 # main
 #
 def main():
+    global terminate_service
+    global dmx_engine
+
     logger = logging.getLogger("dmx")
+
+    terminate_service = False
+    dmx_engine = None
 
     # Clean up when killed
     def term_handler(signum, frame):
+        global terminate_service
         logger.info("AtHomeDMX received kill signal...shutting down")
         # This will break the forever loop at the foot of main()
         terminate_service = True
@@ -43,10 +52,40 @@ def main():
 
     # Orderly clean up of the DMX engine
     def CleanUp():
-        dmx_engine.Stop()
+        global dmx_engine
+        if dmx_engine:
+            dmx_engine.Stop()
         logger.info("AtHomeDMX shutdown complete")
         logger.info("################################################################################")
         app_logger.Shutdown()
+
+    # TODO Holding tank for this code.
+    def run_dmx_engine():
+        global dmx_engine
+        # Activate the server; this will keep running until you
+        # interrupt the program with Ctrl-C or kill the daemon.
+
+        # Fire up the DMX script engine
+        dmx_engine = engine.dmx_engine.DMXEngine()
+
+        # Launch the engine server
+        try:
+            # This runs "forever", until ctrl-c or killed
+            dmx_engine.Start()
+            logger.info("Engine thread started")
+            terminate_service = False
+            while (not terminate_service) and dmx_engine.Running():
+                # We do a lot of sleeping to avoid using too much CPU :-)
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("AtHomeDMX shutting down...")
+        except Exception as e:
+            logger.error("Unhandled exception occurred")
+            logger.error(e)
+            logger.error(sys.exc_info()[0])
+        finally:
+            # We actually get here through ctrl-c or process kill (SIGTERM)
+            CleanUp()
 
     # Change the current directory so we can find the configuration file.
     # For Linux we should probably put the configuration file in the /etc directory.
@@ -72,44 +111,40 @@ def main():
     logger.info("Starting up...")
 
     logger.info("Using configuration file: %s", configuration.Configuration.GetConfigurationFilePath())
-    # TODO If we decide to support drivers, we probably need the configuration to
-    # specify the type of interface (e.g. uDMX) and its unique identification)
-    # For now, this app supports the first uDMX it finds.
-    #logger.info("X10 controller: %s", Configuration.Configuration.X10ControllerDevice())
-    #logger.info("ComPort: %s", Configuration.Configuration.ComPort())
-
-    # Inject the controller driver
-    # TODO If we decide to support drivers for DMX interfaces
-    #driver = Configuration.Configuration.GetX10ControllerDriver()
-    #drivers.X10ControllerAdapter.X10ControllerAdapter.Open(driver)
-
-    # TODO turn this into the script engine thread
-    # Fire up the DMX script engine
-    dmx_engine = engine.dmx_engine.DMXEngine()
 
     # Set up handler for the kill signal
-    signal.signal(signal.SIGTERM, term_handler)
-
-    # Activate the server; this will keep running until you
+    signal.signal(signal.SIGTERM, term_handler)  # Activate the server; this will keep running until you
     # interrupt the program with Ctrl-C or kill the daemon.
 
-    # Launch the engive server
+    # This accepts connections from any network interface. It was the only
+    # way to get it to work in the RPi from remote machines.
+    HOST, PORT = "0.0.0.0", configuration.Configuration.Port()
+
+    # Create the TCP socket server on its own thread.
+    # This is done so that we can handle the kill signal which
+    # arrives on the main thread. If we didn't put the TCP server
+    # on its own thread we would not be able to shut it down in
+    # an orderly fashion.
+    server = SocketServerThread.SocketServerThread(HOST, PORT, engine.dmx_client.DMXClient)
+
+    # Launch the socket server
     try:
         # This runs "forever", until ctrl-c or killed
-        dmx_engine.Start()
-        logger.info("Engine thread started")
+        server.Start()
         terminate_service = False
-        while (not terminate_service) and dmx_engine.Running():
+        while not terminate_service:
             # We do a lot of sleeping to avoid using too much CPU :-)
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("AtHomeDMX shutting down...")
+        logger.info("AtHomePowerlineServer shutting down...")
     except Exception as e:
         logger.error("Unhandled exception occurred")
-        logger.error(e)
+        logger.error(e.strerror)
         logger.error(sys.exc_info()[0])
     finally:
         # We actually get here through ctrl-c or process kill (SIGTERM)
+        # TODO This needs to move to the clean up function
+        server.Stop()
         CleanUp()
 
 

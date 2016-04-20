@@ -42,6 +42,7 @@ logger = logging.getLogger("dmx")
 ########################################################################
 class Configuration():
     ActiveConfig = None
+    DEFAULT_PORT = 5000
 
     ######################################################################
     def __init__(self):
@@ -109,6 +110,16 @@ class Configuration():
 
     ######################################################################
     @classmethod
+    def Port(cls):
+        p = cls.get_config_var("Port")
+        if not p:
+            # Default
+            p = cls.DEFAULT_PORT
+            logger.info("Using default TCP port {}".format(cls.DEFAULT_PORT))
+        return p
+
+    ######################################################################
+    @classmethod
     def Interface(cls):
         return cls.get_config_var("Interface")
 
@@ -116,6 +127,11 @@ class Configuration():
     @classmethod
     def Scriptfile(cls):
         return cls.get_config_var("ScriptFile")
+
+    ######################################################################
+    @classmethod
+    def ScriptfileDirectory(cls):
+        return cls.get_config_var("ScriptfileDirectory")
 
     ######################################################################
     @classmethod
