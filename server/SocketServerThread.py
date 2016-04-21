@@ -16,9 +16,9 @@
 import threading
 import ThreadedTCPServer
 import TCPRequestHandler
-import logging
+import app_logger
 
-logger = logging.getLogger("dmx")
+logger = app_logger.getAppLogger()
 
 
 # This class should be used as a singleton

@@ -323,7 +323,7 @@ class ScriptCPU:
         self._do_for_stmt = self._stmt_index
 
         # Determine the end time
-        # TODO Consider using the start time and a timedelta that allows second accuracy
+        # Use the start time and a timedelta that allows second accuracy
         now = datetime.datetime.now()
         self._do_for_elapsed_time = datetime.timedelta(seconds=(stmt[1].tm_hour * 60 * 60) + (stmt[1].tm_min * 60) + stmt[1].tm_sec)
         self._do_for_start_time = now

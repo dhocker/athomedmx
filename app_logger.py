@@ -15,10 +15,7 @@ import configuration
 
 
 ########################################################################
-# Enable logging for the AtHomePowerlineServer application
-# TODO In order to get dual logging to work, we'll need to create
-# a logger instance in every module that logs. We can configure that
-# instance here. In the mean time, we'll use logging to file.
+# Enable logging for the AtHomeDMX application
 def EnableEngineLogging():
     # Default overrides
     logformat = '%(asctime)s, %(module)s, %(levelname)s, %(message)s'
@@ -61,6 +58,12 @@ def EnableEngineLogging():
 
     logger.debug("Logging to console")
 
+def getAppLogger():
+    """
+    Return an instance of the default logger for this app.
+    :return: logger instance
+    """
+    return logging.getLogger("dmx")
 
 # Controlled logging shutdown
 def Shutdown():

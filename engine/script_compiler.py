@@ -352,7 +352,6 @@ class ScriptCompiler:
         :param tokens:
         :return:
         """
-        # TODO Consider value substitution for times
         return tokens
 
     def step_period_stmt(self, tokens):

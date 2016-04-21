@@ -60,6 +60,7 @@ def main():
         app_logger.Shutdown()
 
     # TODO Holding tank for this code.
+    # TODO Move this functionality to DMXClient.
     def run_dmx_engine():
         global dmx_engine
         # Activate the server; this will keep running until you

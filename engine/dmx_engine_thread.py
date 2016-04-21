@@ -39,7 +39,7 @@ class DMXEngineThread(threading.Thread):
         script_file = configuration.Configuration.Scriptfile()
         logger.info("Engine running script file %s", script_file)
 
-        # TODO Initialize DMX script. Establish initial state.
+        # Initialize DMX script. Establish initial state.
         if not self._script.initialize():
             logger.error("Script initialize failed. Thread terminated.")
             self.terminate_signal.set()

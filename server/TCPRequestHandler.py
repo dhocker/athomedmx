@@ -10,9 +10,9 @@
 #
 
 import SocketServer
-import logging
+import app_logger
 
-logger = logging.getLogger("dmx")
+logger = app_logger.getAppLogger()
 
 
 class TCPRequestHandler(SocketServer.BaseRequestHandler):

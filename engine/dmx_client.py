@@ -15,6 +15,8 @@
 # along with this program (the LICENSE file).  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import app_logger
+
 class DMXClient:
     """
     Handles commands sent by a network client.
