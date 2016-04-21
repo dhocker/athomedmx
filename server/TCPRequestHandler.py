@@ -60,7 +60,9 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
 
                     # The command handler generates the response
                     if TCPRequestHandler.command_handler_class:
+                        # Create an instance of the command handler
                         handler = TCPRequestHandler.command_handler_class()
+                        # Pass the command string to the command handler
                         response = handler.execute_command(raw_command)
                     else:
                         response = "ERROR No command handler for " + raw_command + "\n"
@@ -81,7 +83,7 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
                 # Return the response to the client
                 self.request.sendall(response)
 
-                if raw_command.lower().startswith("close"):
+                if raw_command.lower().startswith("close") or raw_command.lower().startswith("exit"):
                     break
 
                 TCPRequestHandler.call_sequence += 1

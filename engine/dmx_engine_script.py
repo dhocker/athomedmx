@@ -24,13 +24,13 @@ import driver.manager
 logger = logging.getLogger("dmx")
 
 class DMXEngineScript():
-    def __init__(self, terminate_signal):
+    def __init__(self, terminate_signal, script_file):
         """
         Construct instance
         :param terminate_signal: injects a threading event that can be tested for termination
         :return:
         """
-        self._script = None
+        self._script = script_file
         self._dev = None
         self._vm = None
         self._terminate_signal = terminate_signal
@@ -42,8 +42,6 @@ class DMXEngineScript():
         :return: Returns True if engine is initialized.
         Returns False if something fails.
         """
-        # Read config for script to execute
-        self._script = configuration.Configuration.Scriptfile()
 
         # Open DMX interface driver
         self._dev = driver.manager.get_driver()

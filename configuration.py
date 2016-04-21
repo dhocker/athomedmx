@@ -130,8 +130,8 @@ class Configuration():
 
     ######################################################################
     @classmethod
-    def ScriptfileDirectory(cls):
-        return cls.get_config_var("ScriptfileDirectory")
+    def ScriptFileDirectory(cls):
+        return cls.get_config_var("ScriptFileDirectory")
 
     ######################################################################
     @classmethod

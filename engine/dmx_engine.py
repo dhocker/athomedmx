@@ -21,12 +21,12 @@ class DMXEngine:
     def __init__(self):
         self.engine_thread = None
 
-    def Start(self):
+    def Start(self, script_file):
         """
         Starts the script engine thread
         :return:
         """
-        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "TimerServiceThread")
+        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "TimerServiceThread", script_file)
         self.engine_thread.start()
 
     def Stop(self):
