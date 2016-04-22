@@ -25,16 +25,17 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
     """
 
     call_sequence = 1
-    # The command_handler is a callable function that takes a single
-    # string argument: command_handler(string_argument)
+
+    # The command_handler_class is injected by the user of this class
+    # See dmx_client.py for an example implementation.
     command_handler_class = None
 
     @classmethod
     def set_command_handler_class(cls, command_handler_to_use):
         """
         Command handler injection
-        :param command_handler_to_use: A callable function that takes
-        a string as a single argument.
+        :param command_handler_to_use: A class that implements a
+        Response class and an execute_command method.
         :return:
         """
         cls.command_handler_class = command_handler_to_use
@@ -44,19 +45,20 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
     """
 
     def handle(self):
-        logger.info("Request from %s", self.client_address[0])
+        logger.info("Connection from %s", self.client_address[0])
 
         # Do until close is received
-        while True:
+        connection_open = True
+        while connection_open:
             # self.request is the TCP socket connected to the client
             raw_command = self.read_command()
             # logger.info("raw json: %s", self.raw_json)
             # logger.info("Request length: %s", len(self.raw_json))
 
-            if raw_command:
+            if raw_command and len(raw_command) > 0:
                 try:
                     logger.info("Request: %s", raw_command)
-                    # logger.info("Args: %s", json.dumps(self.json["args"]))
+                    raw_command = raw_command.lower()
 
                     # The command handler generates the response
                     if TCPRequestHandler.command_handler_class:
@@ -65,30 +67,35 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
                         # Pass the command string to the command handler
                         response = handler.execute_command(raw_command)
                     else:
-                        response = "ERROR No command handler for " + raw_command + "\n"
+                        r = TCPRequestHandler.command_handler_class.Response(raw_command,
+                            result=TCPRequestHandler.command_handler_class.ERROR_RESPONSE)
+                        r.set_value("message", "No command handler")
+                        response = str(r)
 
                     logger.info("Request completed")
                 except Exception as ex:
                     logger.error("Exception occurred while handling request")
                     logger.error(str(ex))
                     logger.error(raw_command)
-                    # Send an error response
-                    # response = CommandHandler.CommandHandler.CreateErrorResponse(self.json["request"],
-                    #     CommandHandler.CommandHandler.UnhandledException,
-                    #     "Unhandled exception occurred", ex.message)
-                    response = "ERROR Exception occurred while handling request\n"
+                    r = TCPRequestHandler.command_handler_class.Response(raw_command,
+                        result=TCPRequestHandler.command_handler_class.ERROR_RESPONSE)
+                    r.set_value("message", "ERROR Exception occurred while handling request")
+                    response = str(r)
                 finally:
                     pass
 
-                # Return the response to the client
-                self.request.sendall(response)
-
-                if raw_command.lower().startswith("close") or raw_command.lower().startswith("quit"):
-                    break
+                if raw_command.startswith("close") or raw_command.startswith("quit"):
+                    connection_open = False
 
                 TCPRequestHandler.call_sequence += 1
             else:
-                break
+                r = TCPRequestHandler.command_handler_class.Response(raw_command,
+                                                                     result=TCPRequestHandler.command_handler_class.ERROR_RESPONSE)
+                r.set_value("message", "Empty command ignored")
+                response = str(r)
+
+            # Return the response to the client
+            self.request.sendall(response)
 
         logger.info("Socket %s closed", self.client_address[0])
 

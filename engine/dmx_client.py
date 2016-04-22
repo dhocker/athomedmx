@@ -101,7 +101,7 @@ class DMXClient:
             self._response[key] = value
 
         def __str__(self):
-            return json.dumps(self._response)
+            return json.dumps(self._response) + DMXClient.END_RESPONSE_DELIMITER
 
     def __init__(self):
         """
@@ -138,7 +138,7 @@ class DMXClient:
 
         # Return the command generated response with the end of response
         # delimiter tacked on.
-        return response + DMXClient.END_RESPONSE_DELIMITER
+        return response
 
     def get_status(self, tokens, command):
         """
@@ -210,6 +210,12 @@ class DMXClient:
         :return:
         """
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
+
+        # At least one argument is required
+        if len(tokens) < 2:
+            r.set_result(DMXClient.ERROR_RESPONSE)
+            r.set_value("message", "Missing script file name argument")
+            return str(r)
 
         DMXClient.dmx_engine = engine.dmx_engine.DMXEngine()
 
