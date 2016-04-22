@@ -18,10 +18,12 @@
 import app_logger
 import configuration
 import engine.dmx_engine
+import app_logger
 import os
 import sys
 import glob
-import app_logger
+import json
+from collections import OrderedDict
 
 logger = app_logger.getAppLogger()
 
@@ -32,49 +34,86 @@ class DMXClient:
 
     The protocol is simple.
     The client sends a command line terminated by a newline (\n).
-    The server executes the command a returns a response in the form of one or more lines.
-    Each response line is terminated with a newline.
-    The first line of the response indicates the result: OK or ERROR.
-    The end of the response is marked by an empty line (or two consecutive newlines).
+    The server executes the command a returns a JSON formatted response.
+    The response is one line, terminated with a newline.
+    The JSON payload is a dictionary. The following properties appear in all responses.
+        command: the command for which the response was generated
+        result: OK or ERROR
+    The remainder of the response is command dependent. Here some additional properties
+    that may appear
+        state: RUNNING, STOPPED or CLOSED
+        message: Message text usually explaining an error
+        scriptfile: The name of the currently running script file
 
     Example
     Client sends:
         scriptfiles\n
     Server responds:
-        OK\n
-        file1\n
-        file2\n
-        filen\n
-        \n
+        {"command": "scriptfiles", "result": "OK", "scriptfiles": ["definitions.dmx", "test-end.dmx", "test.dmx"]}\n
 
     Client sends:
         bad-command\n
     Server responds:
-        ERROR\n
-        Unrecognized command\n
-        \n
+        {"command": "bad-command", "result": "ERROR", "message": "Unrecognized command"}\n
+
+    The easiest way to experiment with the client is to use telnet. Simply open
+    a connection a type commands.
+        telnet server host
+
+    Recognized commands
+        status
+        scriptfiles
+        start <script-name>
+        stop
+        quit
+        close
     """
 
     # Protocol constants
-    OK_RESPONSE = "OK\n"
-    ERROR_RESPONSE = "ERROR\n"
+    OK_RESPONSE = "OK"
+    ERROR_RESPONSE = "ERROR"
     END_RESPONSE_DELIMITER = "\n"
-    LINE_END = "\n"
+    STATUS_RUNNING = "RUNNING"
+    STATUS_STOPPED = "STOPPED"
+    STATUS_CLOSED = "CLOSED"
 
     # Singleton instance of DMX engine
     # TODO Access to this variable should be under lock control is multiple, concurrent sockets are supported
     dmx_engine = None
     dmx_script = None
 
+    class Response:
+        def __init__(self, command, result=None, state=None):
+            self._response = OrderedDict()
+            self._response["command"] = command
+            if result:
+                self._response["result"] = result
+            if state:
+                self._response["state"] = state
+
+        def set_result(self, result):
+            self._response["result"] = result
+
+        def set_state(self, state):
+            self._response["state"] = state
+
+        def set_value(self, key, value):
+            self._response[key] = value
+
+        def __str__(self):
+            return json.dumps(self._response)
+
     def __init__(self):
-        self._script = None
+        """
+        Constructor for an instance of DMXClient
+        """
         # Valid commands and their handlers
         self._valid_commands = {
             "scriptfiles": self.get_script_files,
             "start": self.start_script,
             "stop": self.stop_script,
             "status": self.get_status,
-            "exit": self.close_connection,
+            "quit": self.quit_session,
             "close": self.close_connection
         }
 
@@ -84,30 +123,22 @@ class DMXClient:
         :param raw_command:
         :return:
         """
-        response = self._format_response(DMXClient.ERROR_RESPONSE, "Command not implemented", None)
-
         tokens = raw_command.lower().split()
         if (len(tokens) >= 1) and (tokens[0] in self._valid_commands):
             if self._valid_commands[tokens[0]]:
                 response = self._valid_commands[tokens[0]](tokens, raw_command)
             else:
-                response = self._format_response(DMXClient.ERROR_RESPONSE, "Command not implemented: {0}", tokens[0])
+                r = DMXClient.Response(tokens[0], result=DMXClient.ERROR_RESPONSE)
+                r.set_value("message", "Command not implemented")
+                response = str(r)
         else:
-            response = self._format_response(DMXClient.ERROR_RESPONSE, "Unrecognized command: {0}", tokens[0])
+            r = DMXClient.Response(tokens[0], result=DMXClient.ERROR_RESPONSE)
+            r.set_value("message", "Unrecognized command")
+            response = str(r)
 
         # Return the command generated response with the end of response
         # delimiter tacked on.
         return response + DMXClient.END_RESPONSE_DELIMITER
-
-    def _format_response(self, result, response_text, *args):
-        """
-        Format a single line response
-        :param result: OK or ERROR
-        :param response_text: Response text string suitable for use with .format method
-        :param args: Variable list of arguments for substitution in response_text
-        :return:
-        """
-        return result + response_text.format(*args) + DMXClient.LINE_END
 
     def get_status(self, tokens, command):
         """
@@ -116,9 +147,15 @@ class DMXClient:
         :param command:
         :return:
         """
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
+
         if DMXClient.dmx_script:
-            return self._format_response(DMXClient.OK_RESPONSE, "DMX Engine running script: {0}", DMXClient.dmx_script)
-        return self._format_response(DMXClient.OK_RESPONSE, "DMX Engine stopped", None)
+            r.set_state(DMXClient.STATUS_RUNNING)
+            r.set_value("scriptfile", DMXClient.dmx_script)
+        else:
+            r.set_state(DMXClient.STATUS_STOPPED)
+
+        return str(r)
 
     def get_script_files(self, tokens, command):
         """
@@ -127,13 +164,16 @@ class DMXClient:
         :param command:
         :return: List of file names without path.
         """
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
+
         search_for = configuration.Configuration.ScriptFileDirectory() + "/*.dmx"
         files = glob.glob(search_for)
         names = []
         for f in files:
             names.append(os.path.split(f)[1])
-        response = DMXClient.OK_RESPONSE + DMXClient.LINE_END.join(names) + DMXClient.LINE_END
-        return response
+
+        r.set_value("scriptfiles", names)
+        return str(r)
 
     def close_connection(self, tokens, command):
         """
@@ -143,7 +183,24 @@ class DMXClient:
         :param command:
         :return:
         """
-        return self._format_response(DMXClient.OK_RESPONSE, "Closed")
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE, state=DMXClient.STATUS_CLOSED)
+        return str(r)
+
+    def quit_session(self, tokens, command):
+        """
+        Close the current connection/session. Note that the DMX Engine
+        is stopped if it is running.
+        :param tokens:
+        :param command:
+        :return:
+        """
+        # If necessary, stop the DMX Engine
+        if DMXClient.dmx_engine:
+            DMXClient.dmx_engine.Stop()
+            DMXClient.dmx_script = None
+
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE, state=DMXClient.STATUS_CLOSED)
+        return str(r)
 
     def start_script(self, tokens, command):
         """
@@ -152,12 +209,23 @@ class DMXClient:
         :param command:
         :return:
         """
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
+
         DMXClient.dmx_engine = engine.dmx_engine.DMXEngine()
 
         # Full path to script file
         # TODO Concurrency issue
-        DMXClient.dmx_script = tokens[1]
-        full_path = "{0}/{1}".format(configuration.Configuration.ScriptFileDirectory(), DMXClient.dmx_script)
+        full_path = "{0}/{1}".format(configuration.Configuration.ScriptFileDirectory(), tokens[1])
+        if not os.path.exists(full_path):
+            r.set_result(DMXClient.ERROR_RESPONSE)
+            r.set_value("message", "Script file does not exist")
+            r.set_value("scriptfile", tokens[1])
+            return str(r)
+
+        # Stop a running script
+        if DMXClient.dmx_engine:
+            DMXClient.dmx_engine.Stop()
+            DMXClient.dmx_script = None
 
         # Launch the DMX engine VM
         try:
@@ -165,18 +233,35 @@ class DMXClient:
             # Note than the DMX enginer runs on its own thread
             DMXClient.dmx_engine.Start(full_path)
             logger.info("Engine thread started")
+            DMXClient.dmx_script = tokens[1]
+            r.set_value("scriptfile", DMXClient.dmx_script)
         except Exception as e:
             logger.error("Unhandled exception starting DMX engine")
             logger.error(e)
             logger.error(sys.exc_info()[0])
-            return self._format_response(DMXClient.ERROR_RESPONSE, "Script failed to start")
+            r.set_result(DMXClient.ERROR_RESPONSE)
+            r.set_value("message", "Script failed to start")
+            return str(r)
 
-        return self._format_response(DMXClient.OK_RESPONSE, "Script started")
+        r.set_state(DMXClient.STATUS_RUNNING)
+
+        return str(r)
 
     def stop_script(self, tokens, command):
+        """
+        Stop any running script. If no script is running,
+        the command does nothing (this is not considered an error).
+        :param tokens:
+        :param command:
+        :return:
+        """
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
+
         if DMXClient.dmx_engine:
             DMXClient.dmx_engine.Stop()
             DMXClient.dmx_script = None
-            return self._format_response(DMXClient.OK_RESPONSE, "Script stopped")
+        else:
+            r.set_value("message", "DMX Engine was not running")
 
-        return self._format_response(DMXClient.OK_RESPONSE, "No script running")
+        r.set_state(DMXClient.STATUS_STOPPED)
+        return str(r)

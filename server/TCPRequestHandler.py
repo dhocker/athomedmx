@@ -83,7 +83,7 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
                 # Return the response to the client
                 self.request.sendall(response)
 
-                if raw_command.lower().startswith("close") or raw_command.lower().startswith("exit"):
+                if raw_command.lower().startswith("close") or raw_command.lower().startswith("quit"):
                     break
 
                 TCPRequestHandler.call_sequence += 1
