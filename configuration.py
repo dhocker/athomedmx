@@ -112,11 +112,19 @@ class Configuration():
     @classmethod
     def Port(cls):
         p = cls.get_config_var("Port")
-        if not p:
+        if p:
+            try:
+                port = int(p)
+                if port > 65535:
+                    raise ValueError
+            except:
+                port = cls.DEFAULT_PORT
+                logger.info("Invalid TCP port value. Using default TCP port {}".format(cls.DEFAULT_PORT))
+        else:
             # Default
-            p = cls.DEFAULT_PORT
+            port = cls.DEFAULT_PORT
             logger.info("Using default TCP port {}".format(cls.DEFAULT_PORT))
-        return p
+        return port
 
     ######################################################################
     @classmethod
