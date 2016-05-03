@@ -42,4 +42,4 @@ class DMXEngine:
         Returns the running status of the thread
         :return: Returns True if the thread is running
         """
-        return not self.engine_thread.is_terminated
+        return self.engine_thread and (not self.engine_thread.is_terminated)

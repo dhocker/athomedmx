@@ -24,6 +24,7 @@ class ScriptCompiler:
     Builds an executable VM
     """
     def __init__(self, vm):
+        self._last_error = None
         self._vm = vm
         self._stmt = None
         self._file_depth = 0
@@ -55,18 +56,28 @@ class ScriptCompiler:
             "reset": self.reset_stmt
         }
 
+    @property
+    def last_error(self):
+        """
+        Returns the last logged error message
+        :return:
+        """
+        return self._last_error
+
     def compile(self, script_file):
         """
         Compile the script defined by the given file handle
         :param script_file:
         :return:
         """
+        self._last_error = None
 
         # Open the script file for compiling
         try:
             sf = open(script_file, "r")
             self._file_path[self._file_depth] = script_file
         except Exception as ex:
+            self._last_error = "Error opening script file {0}".format(script_file)
             logger.error("Error opening script file %s", script_file)
             logger.error(str(ex))
             return False

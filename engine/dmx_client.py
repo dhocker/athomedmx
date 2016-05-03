@@ -79,7 +79,7 @@ class DMXClient:
 
     # Singleton instance of DMX engine
     # TODO Access to this variable should be under lock control is multiple, concurrent sockets are supported
-    dmx_engine = None
+    dmx_engine = engine.dmx_engine.DMXEngine()
     dmx_script = None
 
     class Response:
@@ -149,7 +149,7 @@ class DMXClient:
         """
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
 
-        if DMXClient.dmx_script:
+        if DMXClient.dmx_engine.Running():
             r.set_state(DMXClient.STATUS_RUNNING)
             r.set_value("scriptfile", DMXClient.dmx_script)
         else:
@@ -195,7 +195,7 @@ class DMXClient:
         :return:
         """
         # If necessary, stop the DMX Engine
-        if DMXClient.dmx_engine:
+        if DMXClient.dmx_engine.Running():
             DMXClient.dmx_engine.Stop()
             DMXClient.dmx_script = None
 
@@ -217,8 +217,6 @@ class DMXClient:
             r.set_value("message", "Missing script file name argument")
             return str(r)
 
-        DMXClient.dmx_engine = engine.dmx_engine.DMXEngine()
-
         # Full path to script file
         # TODO Concurrency issue
         full_path = "{0}/{1}".format(configuration.Configuration.ScriptFileDirectory(), tokens[1])
@@ -229,7 +227,7 @@ class DMXClient:
             return str(r)
 
         # Stop a running script
-        if DMXClient.dmx_engine:
+        if DMXClient.dmx_engine.Running():
             DMXClient.dmx_engine.Stop()
             DMXClient.dmx_script = None
 
@@ -263,7 +261,7 @@ class DMXClient:
         """
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
 
-        if DMXClient.dmx_engine:
+        if DMXClient.dmx_engine.Running():
             DMXClient.dmx_engine.Stop()
             DMXClient.dmx_script = None
         else:
