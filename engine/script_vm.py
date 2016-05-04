@@ -14,7 +14,12 @@
 #
 
 class ScriptVM():
-    def __init__(self):
+    def __init__(self, script_file):
+        # TODO Some/most/all of these should be made properties
+
+        # Underlying script file
+        self.script_file = script_file
+
         # Script statements are a list of token lists
         self.stmts = []
 

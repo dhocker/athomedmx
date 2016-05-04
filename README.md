@@ -370,7 +370,7 @@ properties that are common to most command responses.
 |------------- |-------------|
 | command | The command that produced this response. |
 | result | OK or ERROR. |
-| message | If the result == ERROR this property will describe the error. |
+| messages | If the result == ERROR this property (a list) will describe the error. |
 
 Commands that produce an error will include an error message in the response.
 
@@ -398,7 +398,7 @@ The start command is used to start execution of a specified script.
 
 **Response:** {"command": "start", "result": "OK", "scriptfile": "test.dmx", "state": "RUNNING"}
 
-**Error Response:** {"command": "start", "result": "ERROR", "message": "Script file does not exist", "scriptfile": "x.dmx"}
+**Error Response:** {"command": "start", "result": "ERROR", "messages": ["Script file does not exist"], "scriptfile": "x.dmx"}
 
 ### Stop Script Execution
 The stop command terminates execution of the current script. If no script is running,

@@ -71,13 +71,14 @@ class ScriptCompiler:
         :return:
         """
         self._last_error = None
+        self._vm.script_file = script_file
 
         # Open the script file for compiling
         try:
             sf = open(script_file, "r")
             self._file_path[self._file_depth] = script_file
         except Exception as ex:
-            self._last_error = "Error opening script file {0}".format(script_file)
+            self.script_error("Error opening script file {0}".format(script_file))
             logger.error("Error opening script file %s", script_file)
             logger.error(str(ex))
             return False
@@ -235,11 +236,16 @@ class ScriptCompiler:
         :param message:
         :return:
         """
-        logger.error("Script error in file %s at line %d",
-                     self._file_path[self._file_depth],
-                     self._line_number[self._file_depth])
-        logger.error(self._stmt)
+        self._last_error = []
+        if self._stmt:
+            error_at = "Script error in file {0} at line {1}".format(
+                         self._file_path[self._file_depth],
+                         self._line_number[self._file_depth])
+            logger.error(error_at)
+            logger.error(self._stmt)
+            self._last_error.append(error_at)
         logger.error(message)
+        self._last_error.append(message)
 
     def channel_stmt(self, tokens):
         """

@@ -24,15 +24,15 @@ import driver.manager
 logger = logging.getLogger("dmx")
 
 class DMXEngineScript():
-    def __init__(self, terminate_signal, script_file):
+    def __init__(self, terminate_signal, vm):
         """
         Construct instance
         :param terminate_signal: injects a threading event that can be tested for termination
+        :param vm: injects a script VM into the engine
         :return:
         """
-        self._script = script_file
         self._dev = None
-        self._vm = None
+        self._vm = vm
         self._terminate_signal = terminate_signal
         pass
 
@@ -51,16 +51,7 @@ class DMXEngineScript():
             logger.error("DMX interface driver failed to open")
             return False
 
-        # Create a VM instance
-        self._vm = script_vm.ScriptVM()
-
-        # Compile the script (pass 1)
-        compiler = script_compiler.ScriptCompiler(self._vm)
-        rc = compiler.compile(self._script)
-        if rc:
-            logger.info("Successfully compiled script %s", self._script)
-
-        return rc
+        return True
 
     def execute(self):
         """

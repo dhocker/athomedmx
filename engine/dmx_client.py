@@ -129,11 +129,11 @@ class DMXClient:
                 response = self._valid_commands[tokens[0]](tokens, raw_command)
             else:
                 r = DMXClient.Response(tokens[0], result=DMXClient.ERROR_RESPONSE)
-                r.set_value("message", "Command not implemented")
+                r.set_value("messages", "Command not implemented")
                 response = str(r)
         else:
             r = DMXClient.Response(tokens[0], result=DMXClient.ERROR_RESPONSE)
-            r.set_value("message", "Unrecognized command")
+            r.set_value("messages", "Unrecognized command")
             response = str(r)
 
         # Return the command generated response with the end of response
@@ -209,21 +209,24 @@ class DMXClient:
         :param command:
         :return:
         """
+
+        # TODO This method needs to be refactored
+
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
 
         # At least one argument is required
         if len(tokens) < 2:
             r.set_result(DMXClient.ERROR_RESPONSE)
-            r.set_value("message", "Missing script file name argument")
+            r.set_value("messages", "Missing script file name argument")
             return str(r)
 
         # Full path to script file
         # TODO Concurrency issue
+        r.set_value("scriptfile", tokens[1])
         full_path = "{0}/{1}".format(configuration.Configuration.ScriptFileDirectory(), tokens[1])
         if not os.path.exists(full_path):
             r.set_result(DMXClient.ERROR_RESPONSE)
-            r.set_value("message", "Script file does not exist")
-            r.set_value("scriptfile", tokens[1])
+            r.set_value("messages", ["Script file does not exist"])
             return str(r)
 
         # Stop a running script
@@ -231,20 +234,26 @@ class DMXClient:
             DMXClient.dmx_engine.Stop()
             DMXClient.dmx_script = None
 
-        # Launch the DMX engine VM
+        # Launch the DMX engine
         try:
             # The engine will run until terminated by stop
-            # Note than the DMX enginer runs on its own thread
-            DMXClient.dmx_engine.Start(full_path)
-            logger.info("Engine thread started")
-            DMXClient.dmx_script = tokens[1]
-            r.set_value("scriptfile", DMXClient.dmx_script)
+            # Note than the DMX engine runs the script on its own thread
+            # Compile the script
+            if DMXClient.dmx_engine.compile(full_path):
+                DMXClient.dmx_script = tokens[1]
+            else:
+                r.set_result(DMXClient.ERROR_RESPONSE)
+                r.set_state(DMXClient.STATUS_STOPPED)
+                r.set_value("messages", DMXClient.dmx_engine.last_error)
+                return str(r)
+            # Execute the compiled script
+            DMXClient.dmx_engine.execute()
         except Exception as e:
             logger.error("Unhandled exception starting DMX engine")
             logger.error(e)
             logger.error(sys.exc_info()[0])
             r.set_result(DMXClient.ERROR_RESPONSE)
-            r.set_value("message", "Script failed to start")
+            r.set_value("messages", ["Script failed to start"])
             return str(r)
 
         r.set_state(DMXClient.STATUS_RUNNING)
@@ -265,7 +274,7 @@ class DMXClient:
             DMXClient.dmx_engine.Stop()
             DMXClient.dmx_script = None
         else:
-            r.set_value("message", "DMX Engine was not running")
+            r.set_value("messages", "DMX Engine was not running")
 
         r.set_state(DMXClient.STATUS_STOPPED)
         return str(r)

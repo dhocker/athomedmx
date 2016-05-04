@@ -14,20 +14,70 @@
 #
 
 import dmx_engine_thread
+import script_vm
+import script_compiler
+import logging
+
+logger = logging.getLogger("dmx")
 
 
 # This class should be used as a singleton
 class DMXEngine:
     def __init__(self):
         self.engine_thread = None
+        self._vm = None
+        self._compiler = None
+        self._last_error = None
 
-    def Start(self, script_file):
+    @property
+    def last_error(self):
+        """
+        Returns the last logged error message
+        :return:
+        """
+        return self._last_error
+
+    def compile(self, script_file):
+        # Create a VM instance
+        self._vm = script_vm.ScriptVM(script_file)
+
+        # Compile the script (pass 1) of the current (main) thread
+        self._compiler = script_compiler.ScriptCompiler(self._vm)
+        rc = self._compiler.compile(script_file)
+        if not rc:
+            self._last_error = self._compiler.last_error
+            return rc
+
+        logger.info("Successfully compiled script %s", script_file)
+        return rc
+
+    def execute(self):
+        # Execute the compiled script on a separate thread
+        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "DMXEngineThread", self._vm)
+        self.engine_thread.start()
+
+    def __Start(self, script_file):
         """
         Starts the script engine thread
         :return:
         """
-        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "TimerServiceThread", script_file)
+        # Create a VM instance
+        self._vm = script_vm.ScriptVM()
+
+        # Compile the script (pass 1) of the current (main) thread
+        self._compiler = script_compiler.ScriptCompiler(self._vm)
+        rc = self._compiler.compile(script_file)
+        if not rc:
+            self._last_error = self._compiler.last_error
+            return rc
+
+        logger.info("Successfully compiled script %s", script_file)
+
+        # Execute the compiled script on a separate thread
+        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "DMXEngineThread", self._vm)
         self.engine_thread.start()
+
+        return rc
 
     def Stop(self):
         """
