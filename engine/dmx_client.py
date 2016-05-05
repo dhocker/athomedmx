@@ -217,7 +217,7 @@ class DMXClient:
         # At least one argument is required
         if len(tokens) < 2:
             r.set_result(DMXClient.ERROR_RESPONSE)
-            r.set_value("messages", "Missing script file name argument")
+            r.set_value("messages", ["Missing script file name argument"])
             return str(r)
 
         # Full path to script file
@@ -236,8 +236,6 @@ class DMXClient:
 
         # Launch the DMX engine
         try:
-            # The engine will run until terminated by stop
-            # Note than the DMX engine runs the script on its own thread
             # Compile the script
             if DMXClient.dmx_engine.compile(full_path):
                 DMXClient.dmx_script = tokens[1]
@@ -247,6 +245,8 @@ class DMXClient:
                 r.set_value("messages", DMXClient.dmx_engine.last_error)
                 return str(r)
             # Execute the compiled script
+            # The engine will run until terminated by stop
+            # Note than the DMX engine runs the script on its own thread
             DMXClient.dmx_engine.execute()
         except Exception as e:
             logger.error("Unhandled exception starting DMX engine")

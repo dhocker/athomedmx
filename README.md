@@ -400,6 +400,8 @@ The start command is used to start execution of a specified script.
 
 **Error Response:** {"command": "start", "result": "ERROR", "messages": ["Script file does not exist"], "scriptfile": "x.dmx"}
 
+Note that the messages property is a list. Script compilation errors will typically produce a multi-line message.
+
 ### Stop Script Execution
 The stop command terminates execution of the current script. If no script is running,
 the command is ignored.
