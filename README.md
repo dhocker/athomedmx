@@ -98,7 +98,7 @@ The first token of a statement is the statement identifier (a.k.a. an opcode or 
     statement [argument [argument...argument]]
 
 ### Names
-Several statements involve the defintion of a name (a constant). The only rule for a name is that it
+Several statements involve the definition of a name (a constant). The only rule for a name is that it
 cannot contain blanks. A name can contain any alpha-numeric or special character.
 Single or double quotes have no special significance. 
 
@@ -110,12 +110,12 @@ Any line whose first non-blank character is a # is a comment. Comments are ignor
 Comments are not recognized as such when placed at the end of an otherwise valid statement.
 
 ### Channel
-A channel statement defines a named DMX channel. Valid DMX channels are 1-512.
+A channel statement defines a named DMX channel. Valid DMX channels are n=1-512.
 
     channel name n
     
 ### Value
-A value statement defines a named channel value or set of values (e.g. rgb). Valid channel values are 0-255.
+A value statement defines a named channel value or set of values (e.g. rgb). Valid channel values are v=0-255.
 
     value name v1 v2...vn
 
@@ -133,7 +133,8 @@ forward at this rate. It’s the clock tick interval. The default step period is
 
 ### Import
 The import statement includes another file into the script file. This works like a C/C++ include or a Python import
-statement. The content of the imported file is inserted into the script in line.
+statement. The content of the imported file is inserted into the script in line. There is no duplicate import
+checking. If you import the same file multiple times, its contents will be inserted multiple times.
 
     import filename
 
@@ -372,7 +373,7 @@ properties that are common to most command responses.
 | result | OK or ERROR. |
 | messages | If the result == ERROR this property (a list) will describe the error. |
 
-Commands that produce an error will include an error message in the response.
+Commands that produce an error will include an error message list in the response.
 
 
 ### DMX Engine Status
@@ -392,7 +393,8 @@ The scriptfiles command returns a list of all of the available script files.
 **Response:** {"command": "scriptfiles", "result": "OK", "scriptfiles": ["definitions.dmx", "test-end.dmx", "test.dmx"]}
 
 ### Start Script Execution
-The start command is used to start execution of a specified script.
+The start command is used to start execution of a specified script. Any running script is stopped before the
+new script is started.
 
 **Command:** start script-file-name
 
@@ -456,4 +458,4 @@ Assuming Raspbian:
 
     sudo cp athomedmxD.sh /etc/init.d
     sudo update-rc.d athomedmxD.sh defaults
-
+    sudo service athomedmxD.sh start
