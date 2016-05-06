@@ -17,6 +17,7 @@ import dmx_engine_thread
 import script_vm
 import script_compiler
 import logging
+import sys
 
 logger = logging.getLogger("dmx")
 
@@ -52,32 +53,20 @@ class DMXEngine:
         return rc
 
     def execute(self):
-        # Execute the compiled script on a separate thread
-        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "DMXEngineThread", self._vm)
-        self.engine_thread.start()
-
-    def __Start(self, script_file):
         """
-        Starts the script engine thread
-        :return:
+        Execute the compiled script on a separate thread
+        :return: True if the script started. Otherwise, False.
         """
-        # Create a VM instance
-        self._vm = script_vm.ScriptVM()
-
-        # Compile the script (pass 1) of the current (main) thread
-        self._compiler = script_compiler.ScriptCompiler(self._vm)
-        rc = self._compiler.compile(script_file)
-        if not rc:
-            self._last_error = self._compiler.last_error
-            return rc
-
-        logger.info("Successfully compiled script %s", script_file)
-
-        # Execute the compiled script on a separate thread
-        self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "DMXEngineThread", self._vm)
-        self.engine_thread.start()
-
-        return rc
+        #
+        try:
+            self.engine_thread = dmx_engine_thread.DMXEngineThread(1, "DMXEngineThread", self._vm)
+            self.engine_thread.start()
+        except Exception as e:
+            logger.error("Unhandled exception starting DMX engine")
+            logger.error(e)
+            logger.error(sys.exc_info()[0])
+            return False
+        return True
 
     def Stop(self):
         """

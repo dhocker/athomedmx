@@ -18,9 +18,7 @@
 import app_logger
 import configuration
 import engine.dmx_engine
-import app_logger
 import os
-import sys
 import glob
 import json
 from collections import OrderedDict
@@ -54,7 +52,7 @@ class DMXClient:
     Client sends:
         bad-command\n
     Server responds:
-        {"command": "bad-command", "result": "ERROR", "message": "Unrecognized command"}\n
+        {"command": "bad-command", "result": "ERROR", "messages": ["Unrecognized command"]}\n
 
     The easiest way to experiment with the client is to use telnet. Simply open
     a connection a type commands.
@@ -195,9 +193,7 @@ class DMXClient:
         :return:
         """
         # If necessary, stop the DMX Engine
-        if DMXClient.dmx_engine.Running():
-            DMXClient.dmx_engine.Stop()
-            DMXClient.dmx_script = None
+        DMXClient.stop_engine()
 
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE, state=DMXClient.STATUS_CLOSED)
         return str(r)
@@ -210,11 +206,9 @@ class DMXClient:
         :return:
         """
 
-        # TODO This method needs to be refactored
-
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
 
-        # At least one argument is required
+        # At least one command argument is required - the script name
         if len(tokens) < 2:
             r.set_result(DMXClient.ERROR_RESPONSE)
             r.set_value("messages", ["Missing script file name argument"])
@@ -230,29 +224,22 @@ class DMXClient:
             return str(r)
 
         # Stop a running script
-        if DMXClient.dmx_engine.Running():
-            DMXClient.dmx_engine.Stop()
-            DMXClient.dmx_script = None
+        DMXClient.stop_engine()
 
-        # Launch the DMX engine
-        try:
-            # Compile the script
-            if DMXClient.dmx_engine.compile(full_path):
-                DMXClient.dmx_script = tokens[1]
-            else:
-                r.set_result(DMXClient.ERROR_RESPONSE)
-                r.set_state(DMXClient.STATUS_STOPPED)
-                r.set_value("messages", DMXClient.dmx_engine.last_error)
-                return str(r)
-            # Execute the compiled script
-            # The engine will run until terminated by stop
-            # Note than the DMX engine runs the script on its own thread
-            DMXClient.dmx_engine.execute()
-        except Exception as e:
-            logger.error("Unhandled exception starting DMX engine")
-            logger.error(e)
-            logger.error(sys.exc_info()[0])
+        # Compile the script
+        if DMXClient.dmx_engine.compile(full_path):
+            DMXClient.dmx_script = tokens[1]
+        else:
             r.set_result(DMXClient.ERROR_RESPONSE)
+            r.set_state(DMXClient.STATUS_STOPPED)
+            r.set_value("messages", DMXClient.dmx_engine.last_error)
+            return str(r)
+        # Execute the compiled script
+        # The engine will run until terminated by stop
+        # Note than the DMX engine runs the script on its own thread
+        if not DMXClient.dmx_engine.execute():
+            r.set_result(DMXClient.ERROR_RESPONSE)
+            r.set_state(DMXClient.STATUS_STOPPED)
             r.set_value("messages", ["Script failed to start"])
             return str(r)
 
@@ -270,11 +257,20 @@ class DMXClient:
         """
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
 
-        if DMXClient.dmx_engine.Running():
-            DMXClient.dmx_engine.Stop()
-            DMXClient.dmx_script = None
-        else:
-            r.set_value("messages", "DMX Engine was not running")
+        DMXClient.stop_engine()
 
         r.set_state(DMXClient.STATUS_STOPPED)
         return str(r)
+
+    @classmethod
+    def stop_engine(cls):
+        """
+        If the script engine is running, stop it.
+        :return: True if the engine was running and stopped.
+        Otherwise, False.
+        """
+        if cls.dmx_engine.Running():
+            cls.dmx_engine.Stop()
+            cls.dmx_script = None
+            return True
+        return False
