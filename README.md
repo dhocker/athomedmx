@@ -385,6 +385,14 @@ The status command returns the current status of the DMX Engine.
 
 **Response:** {"command": "status", "result": "OK", "state": "RUNNING", "scriptfile": "test.dmx"}
 
+### DMX Server Configuration
+The configuration command returns the current configuration settings for the DMX server.
+
+**Command:** configuration
+
+**Response:** {"command": "configuration", "result": "OK", "port": 5000, "interface": "dummy", 
+"scriptfiledirectory": "/home/user1/athomedmx/scriptfiles", "logfile": "at_home_dmx.log", "logconsole": true, "loglevel": "DEBUG"}
+ 
 ### List Script Files
 The scriptfiles command returns a list of all of the available script files.
 
