@@ -112,7 +112,8 @@ class DMXClient:
             "stop": self.stop_script,
             "status": self.get_status,
             "quit": self.quit_session,
-            "close": self.close_connection
+            "close": self.close_connection,
+            "configuration": self.get_configuration,
         }
 
     def execute_command(self, raw_command):
@@ -137,6 +138,24 @@ class DMXClient:
         # Return the command generated response with the end of response
         # delimiter tacked on.
         return response
+
+    def get_configuration(self, tokens, command):
+        """
+        Return current server configuration.
+        :param tokens:
+        :param command:
+        :return:
+        """
+        r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE)
+
+        r.set_value("port", configuration.Configuration.Port())
+        r.set_value("interface", configuration.Configuration.Interface())
+        r.set_value("scriptfiledirectory", configuration.Configuration.ScriptFileDirectory())
+        r.set_value("logfile", configuration.Configuration.Logfile())
+        r.set_value("logconsole", configuration.Configuration.Logconsole())
+        r.set_value("loglevel", configuration.Configuration.LogLevel())
+
+        return str(r)
 
     def get_status(self, tokens, command):
         """
