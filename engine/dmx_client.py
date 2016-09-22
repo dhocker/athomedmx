@@ -98,6 +98,11 @@ class DMXClient:
         def set_value(self, key, value):
             self._response[key] = value
 
+        def is_closed(self):
+            if "state" in self._response:
+                return self._response["state"] == DMXClient.STATUS_CLOSED
+            return False
+
         def __str__(self):
             return json.dumps(self._response) + DMXClient.END_RESPONSE_DELIMITER
 
@@ -129,11 +134,11 @@ class DMXClient:
             else:
                 r = DMXClient.Response(tokens[0], result=DMXClient.ERROR_RESPONSE)
                 r.set_value("messages", "Command not implemented")
-                response = str(r)
+                response = r
         else:
             r = DMXClient.Response(tokens[0], result=DMXClient.ERROR_RESPONSE)
             r.set_value("messages", "Unrecognized command")
-            response = str(r)
+            response = r
 
         # Return the command generated response with the end of response
         # delimiter tacked on.
@@ -155,7 +160,7 @@ class DMXClient:
         r.set_value("logconsole", configuration.Configuration.Logconsole())
         r.set_value("loglevel", configuration.Configuration.LogLevel())
 
-        return str(r)
+        return r
 
     def get_status(self, tokens, command):
         """
@@ -172,7 +177,7 @@ class DMXClient:
         else:
             r.set_state(DMXClient.STATUS_STOPPED)
 
-        return str(r)
+        return r
 
     def get_script_files(self, tokens, command):
         """
@@ -190,7 +195,7 @@ class DMXClient:
             names.append(os.path.split(f)[1])
 
         r.set_value("scriptfiles", names)
-        return str(r)
+        return r
 
     def close_connection(self, tokens, command):
         """
@@ -201,7 +206,7 @@ class DMXClient:
         :return:
         """
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE, state=DMXClient.STATUS_CLOSED)
-        return str(r)
+        return r
 
     def quit_session(self, tokens, command):
         """
@@ -215,7 +220,7 @@ class DMXClient:
         DMXClient.stop_engine()
 
         r = DMXClient.Response(tokens[0], result=DMXClient.OK_RESPONSE, state=DMXClient.STATUS_CLOSED)
-        return str(r)
+        return r
 
     def start_script(self, tokens, command):
         """
@@ -231,7 +236,7 @@ class DMXClient:
         if len(tokens) < 2:
             r.set_result(DMXClient.ERROR_RESPONSE)
             r.set_value("messages", ["Missing script file name argument"])
-            return str(r)
+            return r
 
         # Full path to script file
         # TODO Concurrency issue
@@ -240,7 +245,7 @@ class DMXClient:
         if not os.path.exists(full_path):
             r.set_result(DMXClient.ERROR_RESPONSE)
             r.set_value("messages", ["Script file does not exist"])
-            return str(r)
+            return r
 
         # Stop a running script
         DMXClient.stop_engine()
@@ -252,7 +257,7 @@ class DMXClient:
             r.set_result(DMXClient.ERROR_RESPONSE)
             r.set_state(DMXClient.STATUS_STOPPED)
             r.set_value("messages", DMXClient.dmx_engine.last_error)
-            return str(r)
+            return r
         # Execute the compiled script
         # The engine will run until terminated by stop
         # Note than the DMX engine runs the script on its own thread
@@ -260,11 +265,11 @@ class DMXClient:
             r.set_result(DMXClient.ERROR_RESPONSE)
             r.set_state(DMXClient.STATUS_STOPPED)
             r.set_value("messages", ["Script failed to start"])
-            return str(r)
+            return r
 
         r.set_state(DMXClient.STATUS_RUNNING)
 
-        return str(r)
+        return r
 
     def stop_script(self, tokens, command):
         """
@@ -279,7 +284,7 @@ class DMXClient:
         DMXClient.stop_engine()
 
         r.set_state(DMXClient.STATUS_STOPPED)
-        return str(r)
+        return r
 
     @classmethod
     def stop_engine(cls):

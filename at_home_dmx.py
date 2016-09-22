@@ -17,7 +17,7 @@
 # along with this program (the LICENSE file).  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import server.SocketServerThread as SocketServerThread
+import athomesocketserver.SocketServerThread as SocketServerThread
 import configuration
 import app_logger
 import engine.dmx_engine

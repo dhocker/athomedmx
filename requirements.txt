@@ -1,2 +1,3 @@
+athomesocketserver==1.0.0
 pyudmx==1.0.0
 pyusb==1.0.0rc1
