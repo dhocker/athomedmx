@@ -126,7 +126,7 @@ def main():
     # arrives on the main thread. If we didn't put the TCP server
     # on its own thread we would not be able to shut it down in
     # an orderly fashion.
-    server = SocketServerThread.SocketServerThread(HOST, PORT, engine.dmx_client.DMXClient)
+    server = SocketServerThread.SocketServerThread(HOST, PORT, engine.dmx_client.DMXClient, connection_time_out=10.0)
 
     # Launch the socket server
     try:

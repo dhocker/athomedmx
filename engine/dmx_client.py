@@ -121,7 +121,7 @@ class DMXClient:
             "configuration": self.get_configuration,
         }
 
-    def execute_command(self, raw_command):
+    def execute_command(self, port, raw_command):
         """
         Execute a client command/request.
         :param raw_command:
