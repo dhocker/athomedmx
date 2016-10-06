@@ -21,6 +21,7 @@ import engine.dmx_engine
 import os
 import glob
 import json
+import socket
 from collections import OrderedDict
 
 logger = app_logger.getAppLogger()
@@ -84,6 +85,7 @@ class DMXClient:
         def __init__(self, command, result=None, state=None):
             self._response = OrderedDict()
             self._response["command"] = command
+            self._response["hostname"] = socket.gethostname()
             if result:
                 self._response["result"] = result
             if state:
