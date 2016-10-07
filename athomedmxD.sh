@@ -12,8 +12,11 @@
 # Description:       Adapted from the article: http://blog.scphillips.com/2013/07/getting-a-python-script-to-run-in-the-background-as-a-service-on-boot/
 ### END INIT INFO
 
-# Require $all in attempt to get system to a state with all volumes mounted
-# Required-Start:    $remote_fs $syslog
+# Installation
+# Copy this script to /etc/init.d/: sudo cp athomedmxD.sh /etc/init.d/athomedmxD.sh
+# Make sure to set its permissions for execution: chmod +x /etc/init.d/athomedmxD.sh
+# Register the script: sudo update-rc.d athomedmxD.sh defaults
+# Start the daemon: sudo service athomedmxD.sh start
 
 # Setup the path to lead with the virtualenv. When it's python is executed it
 # will activate the virtualenv.
@@ -28,9 +31,10 @@ PYTHON_INT=$VENV/bin/python
 
 # This next line determines what user the script runs as.
 # Root generally not recommended but necessary if you are using the Raspberry Pi GPIO from Python.
-# In this case we may be using a USB based DMX controller which by default requires root access.
-# This can be worked around with some effort. See https://github.com/dhocker/udmx-pyusb.
-DAEMON_USER=root
+# In this case we are using a USB based DMX controller which does not require root access
+# because we have set the permissions of the device.
+# See https://github.com/dhocker/udmx-pyusb.
+DAEMON_USER=pi
 
 # The process ID of the script when it runs is stored here:
 PIDFILE=/var/run/$DAEMON_NAME.pid
