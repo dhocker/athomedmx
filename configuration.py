@@ -99,14 +99,14 @@ class Configuration():
 
     ######################################################################
     @classmethod
-    def get_config_var(cls, var_name):
+    def get_config_var(cls, var_name, default_value=None):
         try:
             return cls.ActiveConfig[var_name]
         except Exception as ex:
             logger.error("Unable to find configuration variable {0}".format(var_name))
             logger.error(str(ex))
             pass
-        return None
+        return default_value
 
     ######################################################################
     @classmethod
@@ -155,6 +155,11 @@ class Configuration():
     @classmethod
     def LogLevel(cls):
         return cls.get_config_var("LogLevel")
+
+    ######################################################################
+    @classmethod
+    def AutoRun(cls):
+        return cls.get_config_var("AutoRun", default_value="")
 
     ######################################################################
     @classmethod

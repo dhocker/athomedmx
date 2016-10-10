@@ -28,6 +28,7 @@ import signal
 import os
 import time
 import sys
+import json
 
 
 #
@@ -59,34 +60,24 @@ def main():
         logger.info("################################################################################")
         app_logger.Shutdown()
 
-    # TODO Holding tank for this code.
-    # TODO Move this functionality to DMXClient.
-    def run_dmx_engine():
-        global dmx_engine
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C or kill the daemon.
-
-        # Fire up the DMX script engine
-        dmx_engine = engine.dmx_engine.DMXEngine()
-
-        # Launch the engine server
-        try:
-            # This runs "forever", until ctrl-c or killed
-            dmx_engine.Start()
-            logger.info("Engine thread started")
-            terminate_service = False
-            while (not terminate_service) and dmx_engine.Running():
-                # We do a lot of sleeping to avoid using too much CPU :-)
-                time.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("AtHomeDMX shutting down...")
-        except Exception as e:
-            logger.error("Unhandled exception occurred")
-            logger.error(e)
-            logger.error(sys.exc_info()[0])
-        finally:
-            # We actually get here through ctrl-c or process kill (SIGTERM)
-            CleanUp()
+    def autorun_script():
+        """
+        Conditionally run a DMX script at start up.
+        :return:
+        """
+        script = configuration.Configuration.AutoRun()
+        if script:
+            dc = engine.dmx_client.DMXClient()
+            response = dc.execute_command("", "start {0}".format(script))
+            r = json.loads(str(response))
+            success = r["result"] == "OK"
+            if success:
+                logger.info("AutoRun script {0} started".format(script))
+            else:
+                logger.error("AutoRun script failed to start script: {0}".format(script))
+                logger.error(r["messages"][0])
+            return success
+        return True
 
     # Change the current directory so we can find the configuration file.
     # For Linux we should probably put the configuration file in the /etc directory.
@@ -132,12 +123,16 @@ def main():
     try:
         # This runs "forever", until ctrl-c or killed
         server.Start()
+
+        # Run AutoRun script
+        autorun_script()
+
         terminate_service = False
         while not terminate_service:
             # We do a lot of sleeping to avoid using too much CPU :-)
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("AtHomePowerlineServer shutting down...")
+        logger.info("AtHomeDMX shutting down...")
     except Exception as e:
         logger.error("Unhandled exception occurred")
         logger.error(e.strerror)
