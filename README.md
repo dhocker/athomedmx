@@ -69,6 +69,7 @@ file is to copy at_home_dmx.example.conf to at_home_dmx.conf and edit as require
 | LogConsole | True or False. If True logging output will be routed to the log file and the console. |
 | LogLevel | Debug, Info, Warn, or Error. Case insensitive. |
 | Port | The TCP port to be used for remote control. The default is 5000. |
+| AutoRun | Script file to be started when AtHomeLED starts. The default is none. |
 
 ## Script Engine <a id="script-engine"></a>
 The script engine executes the contents of a script file. It is a two phase interpreter. The first phase is a
