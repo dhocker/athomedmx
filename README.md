@@ -184,6 +184,42 @@ execution returns to the corresponding Do-At statement.
 
     do-at-end
 
+### Do-Until
+The Do-Until statement is designed for running a lighting program until a given time arrives. 
+This is the kind of thing that
+you might do for a holiday lighting program. The Do-Until statement allows you to specify a time of day when the
+lighting program is to stop running. The lighting program is the script block between the Do-Until statement
+and its corresponding Do-Until-End statement. There can only be one Do-Until statement in a script.
+This is a simple limitation to avoid overly complicating the script language.
+
+    do-until hh:mm:ss
+        # script block statements
+    do-until-end
+    
+The argument is the time of day (24 hour clock) when the block is to stop running. 
+
+Example
+
+    do-until 23:00:00
+        # script block statements
+    do-until-end
+
+This example executes the script block until 23:00:00 (11:00pm).
+
+Note: If you need to break out of a Do-Until statement, use the stop command on the remote control interface.
+
+Note: The Do-Until time is tested at at the beginning of the block. If the script block is long running, it is
+possible that the exit condition will be reached sometime after the until-time. For example, if the
+Do-Until time is 23:00:00 and the block runs for 00:02:00 (2 minutes), the
+Do-Until will end somewhere between 23:00:00 and 24:00:59.
+
+### Do-Until-End
+The Do-Until-End statement serves as the foot of the Do-Until loop or the end of the Do-Until block.
+When script execution reaches the Do-Until-End statement, 
+execution returns to the matching Do-Until statement.
+
+    do-until-end
+
 ### Do-For
 The Do-For statement executes a script block for a given period of time. The script block is the
 set of statements between the Do-For statement and its corresponding Do-For-End statement.
