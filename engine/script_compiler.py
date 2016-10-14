@@ -13,7 +13,6 @@
 # Script compiler
 #
 
-import time
 import datetime
 import logging
 
@@ -434,12 +433,12 @@ class ScriptCompiler:
 
         # Translate/validate duration
         try:
-            duration_struct = time.strptime(tokens[1], "%H:%M:%S")
+            duration = datetime.datetime.strptime(tokens[1], "%H:%M:%S")
         except Exception as ex:
             self.script_error("Invalid duration")
             return None
 
-        tokens[1] = duration_struct
+        tokens[1] = duration
         self._do_for = True
         return tokens
 
@@ -469,12 +468,12 @@ class ScriptCompiler:
 
         # Translate/validate start time
         try:
-            start_time_struct = time.strptime(tokens[1], "%H:%M:%S")
+            start_time = datetime.datetime.strptime(tokens[1], "%H:%M:%S")
         except Exception as ex:
             self.script_error("Invalid start time")
             return None
 
-        tokens[1] = start_time_struct
+        tokens[1] = start_time
         self._do_at = True
         return tokens
 
@@ -504,12 +503,12 @@ class ScriptCompiler:
 
         # Translate/validate until time
         try:
-            start_time_struct = time.strptime(tokens[1], "%H:%M:%S")
+            start_time = datetime.datetime.strptime(tokens[1], "%H:%M:%S")
         except Exception as ex:
             self.script_error("Invalid until time")
             return None
 
-        tokens[1] = start_time_struct
+        tokens[1] = start_time
         self._do_until = True
         return tokens
 
@@ -556,12 +555,12 @@ class ScriptCompiler:
 
         # Translate/validate pause time
         try:
-            pause_struct = time.strptime(tokens[1], "%H:%M:%S")
+            pause_time = datetime.datetime.strptime(tokens[1], "%H:%M:%S")
         except Exception as ex:
             self.script_error("Invalid pause time")
             return None
 
-        tokens[1] = pause_struct
+        tokens[1] = pause_time
         return tokens
 
     def reset_stmt(self, tokens):

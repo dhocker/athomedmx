@@ -317,7 +317,7 @@ class ScriptCPU:
     def do_for_stmt(self, stmt):
         """
         Execute a script block for a given duration of time.
-        :param stmt: stmt[1] is the duration time struct.
+        :param stmt: stmt[1] is the duration datetime.
         :return:
         """
 
@@ -331,7 +331,7 @@ class ScriptCPU:
         # Determine the end time
         # Use the start time and a timedelta that allows second accuracy
         now = datetime.datetime.now()
-        self._do_for_elapsed_time = datetime.timedelta(seconds=(stmt[1].tm_hour * 60 * 60) + (stmt[1].tm_min * 60) + stmt[1].tm_sec)
+        self._do_for_elapsed_time = datetime.timedelta(seconds=(stmt[1].hour * 60 * 60) + (stmt[1].minute * 60) + stmt[1].second)
         self._do_for_start_time = now
         logger.info("Do-For %s", str(self._do_for_elapsed_time))
 
@@ -364,7 +364,7 @@ class ScriptCPU:
     def do_at_stmt(self, stmt):
         """
         Executes a script block when a given time-of-day arrives.
-        :param stmt: stmt[1] is a tm_struct defining the time of day. The hour and minute is
+        :param stmt: stmt[1] is a datetime defining the time of day. The hour and minute is
         all that is used.
         :return:
         """
@@ -375,7 +375,7 @@ class ScriptCPU:
 
         # Determine the start time
         now = datetime.datetime.now()
-        run_start_time = datetime.datetime(now.year, now.month, now.day, stmt[1].tm_hour, stmt[1].tm_min, stmt[1].tm_sec)
+        run_start_time = datetime.datetime(now.year, now.month, now.day, stmt[1].hour, stmt[1].minute, stmt[1].second)
         # If the start time is earlier than now, adjust to tomorrow
         if run_start_time < now:
             # Start is tomorrow
@@ -422,7 +422,7 @@ class ScriptCPU:
     def do_until_stmt(self, stmt):
         """
         Executes a script block until a given time-of-day arrives.
-        :param stmt: stmt[1] is a tm_struct defining the time of day. The hour and minute is
+        :param stmt: stmt[1] is a datetime defining the time of day. The hour and minute is
         all that is used.
         :return:
         """
@@ -433,7 +433,7 @@ class ScriptCPU:
 
         # Determine the until time
         now = datetime.datetime.now()
-        self._run_until_time = datetime.datetime(now.year, now.month, now.day, stmt[1].tm_hour, stmt[1].tm_min, stmt[1].tm_sec)
+        self._run_until_time = datetime.datetime(now.year, now.month, now.day, stmt[1].hour, stmt[1].minute, stmt[1].second)
         # If the start time is earlier than now, adjust to tomorrow
         if self._run_until_time < now:
             # Until time is tomorrow
@@ -510,7 +510,7 @@ class ScriptCPU:
         # Determine the time when the pause will end
         now = datetime.datetime.now()
         pause_time = datetime.timedelta(
-            seconds=(stmt[1].tm_hour * 60 * 60) + (stmt[1].tm_min * 60) + stmt[1].tm_sec)
+            seconds=(stmt[1].hour * 60 * 60) + (stmt[1].minute * 60) + stmt[1].second)
         logger.info("Pausing for %s", str(pause_time))
 
         end_time = datetime.datetime.now() + pause_time
