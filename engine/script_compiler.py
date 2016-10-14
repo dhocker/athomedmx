@@ -32,6 +32,7 @@ class ScriptCompiler:
         self._file_path = [""]
         self._do_for = False
         self._do_at = False
+        self._do_until = False
         self._do_forever = False
 
         # Valid statements and their handlers
@@ -50,6 +51,8 @@ class ScriptCompiler:
             "do-for-end": self.do_for_end_stmt,
             "do-at": self.do_at_stmt,
             "do-at-end": self.do_at_end_stmt,
+            "do-until": self.do_until_stmt,
+            "do-until-end": self.do_until_end_stmt,
             "do-forever": self.do_forever_stmt,
             "do-forever-end": self.do_forever_end_stmt,
             "pause": self.pause_stmt,
@@ -483,6 +486,41 @@ class ScriptCompiler:
         """
         if not self._do_at:
             self.script_error("No matching Do-At is open")
+            return None
+        return tokens
+
+    def do_until_stmt(self, tokens):
+        """
+        Executes a block of script until a given time-of-day arrives.
+        :param tokens: tokens[1] is the time in HH:MM format (24 hour clock).
+        :return:
+        """
+        if len(tokens) < 2:
+            self.script_error("Missing statement arguments")
+            return None
+        if self._do_until:
+            self.script_error("Only one Do-Until statement is allowed")
+            return None
+
+        # Translate/validate until time
+        try:
+            start_time_struct = time.strptime(tokens[1], "%H:%M:%S")
+        except Exception as ex:
+            self.script_error("Invalid until time")
+            return None
+
+        tokens[1] = start_time_struct
+        self._do_until = True
+        return tokens
+
+    def do_until_end_stmt(self, tokens):
+        """
+        Marks the end/foot of a block of code headed by a Do-Until statement.
+        :param tokens:
+        :return:
+        """
+        if not self._do_until:
+            self.script_error("No matching Do-Until is open")
             return None
         return tokens
 
