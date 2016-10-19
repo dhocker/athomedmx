@@ -163,6 +163,11 @@ class Configuration():
 
     ######################################################################
     @classmethod
+    def Timeout(cls):
+        return float(cls.get_config_var("Timeout", default_value=10.0))
+
+    ######################################################################
+    @classmethod
     def GetConfigurationFilePath(cls):
         """
         Returns the full path to the configuration file
