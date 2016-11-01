@@ -36,12 +36,10 @@ import json
 #
 def main():
     global terminate_service
-    global dmx_engine
 
     logger = logging.getLogger("dmx")
 
     terminate_service = False
-    dmx_engine = None
 
     # Clean up when killed
     def term_handler(signum, frame):
@@ -53,9 +51,7 @@ def main():
 
     # Orderly clean up of the DMX engine
     def CleanUp():
-        global dmx_engine
-        if dmx_engine:
-            dmx_engine.Stop()
+        engine.dmx_client.DMXClient.stop_engine()
         logger.info("AtHomeDMX shutdown complete")
         logger.info("################################################################################")
         app_logger.Shutdown()
