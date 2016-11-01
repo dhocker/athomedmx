@@ -46,7 +46,7 @@ class ScriptCPU:
         self._do_at_stmt = -1
         # Do-Until control
         self._do_until_active = False
-        self._run_until_time = None
+        self._do_until_time = None
         self._do_until_stmt = -1
         # Do-forever control
         self._do_forever_stmt = -1
@@ -433,20 +433,20 @@ class ScriptCPU:
 
         # Determine the until time
         now = datetime.datetime.now()
-        self._run_until_time = datetime.datetime(now.year, now.month, now.day, stmt[1].hour, stmt[1].minute, stmt[1].second)
+        self._do_until_time = datetime.datetime(now.year, now.month, now.day, stmt[1].hour, stmt[1].minute, stmt[1].second)
         # If the start time is earlier than now, adjust to tomorrow
-        if self._run_until_time < now:
+        if self._do_until_time < now:
             # Until time is tomorrow
-            self._run_until_time += datetime.timedelta(days=1)
+            self._do_until_time += datetime.timedelta(days=1)
 
         # We're now under Do-Until control
         self._do_until_active = True
-        self._do_until_stmt = self._stmt_index
+        self._do_until_stmt = self._stmt_index + 1
 
-        logger.info("Running until %s...", str(self._run_until_time))
+        logger.info("Running until %s...", str(self._do_until_time))
 
         # Execution continues at the next statement after the Do-Until
-        return self._stmt_index + 1
+        return self._do_until_stmt
 
     def do_until_end_stmt(self, stmt):
         """
@@ -464,7 +464,7 @@ class ScriptCPU:
 
         # Check for until time to arrive. Break out when it does.
         now = datetime.datetime.now()
-        if now >= self._run_until_time:
+        if now >= self._do_until_time:
             logger.info("Do-Until occurs at %s", str(now))
             # On to the next sequential statement
             return self._stmt_index + 1
