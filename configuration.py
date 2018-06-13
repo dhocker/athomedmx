@@ -56,11 +56,11 @@ class Configuration():
         # Try to open the conf file. If there isn't one, we give up.
         try:
             cfg_path = Configuration.GetConfigurationFilePath()
-            print "Opening configuration file {0}".format(cfg_path)
+            print("Opening configuration file {0}".format(cfg_path))
             cfg = open(cfg_path, 'r')
         except Exception as ex:
-            print "Unable to open {0}".format(cfg_path)
-            print str(ex)
+            print("Unable to open {0}".format(cfg_path))
+            print(str(ex))
             return
 
         # Read the entire contents of the conf file
@@ -74,8 +74,8 @@ class Configuration():
             # The interesting part of the configuration is in the "Configuration" section.
             cls.ActiveConfig = config["Configuration"]
         except Exception as ex:
-            print "Unable to parse configuration file as JSON"
-            print str(ex)
+            print("Unable to parse configuration file as JSON")
+            print(str(ex))
             return
 
         # print str(Configuration.ActiveConfig)

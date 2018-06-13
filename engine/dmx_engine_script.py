@@ -15,10 +15,10 @@
 #
 
 import logging
-import configuration
-import script_vm
-import script_compiler
-import script_cpu
+#import configuration
+#import engine.script_vm as script_vm
+#import engine.script_compiler as script_compiler
+import engine.script_cpu as script_cpu
 import driver.manager
 
 logger = logging.getLogger("dmx")

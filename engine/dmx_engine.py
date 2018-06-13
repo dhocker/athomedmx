@@ -13,9 +13,9 @@
 # Engine class encapsulating script engine thread
 #
 
-import dmx_engine_thread
-import script_vm
-import script_compiler
+import engine.dmx_engine_thread as dmx_engine_thread
+import engine.script_vm as script_vm
+import engine.script_compiler as script_compiler
 import logging
 import sys
 

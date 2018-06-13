@@ -15,7 +15,7 @@
 
 import configuration
 import pyudmx.pyudmx
-import dummy_driver
+import driver.dummy_driver as dummy_driver
 import logging
 
 logger = logging.getLogger("dmx")

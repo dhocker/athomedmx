@@ -1,8 +1,9 @@
 #!/usr/bin/python
+# coding: utf-8
 
 #
 # AtHomeDMX - DMX script engine
-# Copyright (C) 2016  Dave Hocker (email: AtHomeX10@gmail.com)
+# Copyright © 2016, 2018  Dave Hocker (email: AtHomeX10@gmail.com)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -145,4 +146,6 @@ def main():
 # Run as an application or daemon
 #
 if __name__ == "__main__":
+    version = sys.version_info
+    print("Running Python {0}.{1}.{2}".format(version[0], version[1], version[2]))
     main()

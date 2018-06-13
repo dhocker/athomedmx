@@ -17,7 +17,7 @@
 import threading
 import logging
 import configuration
-import dmx_engine_script
+import engine.dmx_engine_script as dmx_engine_script
 
 logger = logging.getLogger("dmx")
 

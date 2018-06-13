@@ -1,5 +1,5 @@
 # AtHomeDMX - DMX Server
-Copyright © 2016 by Dave Hocker
+Copyright © 2016,2018 by Dave Hocker (email: AtHomeX10@gmail.com)
 
 ## Overview
 The AtHomeDMX server is designed to run simple DMX controlled light shows on
@@ -37,7 +37,11 @@ If you are interested in learning more about DMX see [DMX](https://en.wikipedia.
 
 The AtHomeDMX server is licensed under the GNU General Public License v3 as published 
 by the Free Software Foundation, Inc..
-See the LICENSE file for the full text of the license.
+See the LICENSE.md file for the full text of the license.
+
+## Compatibility
+The server has been tested on Python 2.7.10 and 3.6.5. However, at some
+point in the near future, support for Python 2 will be dropped.
 
 ## Source Code
 
