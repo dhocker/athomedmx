@@ -1,6 +1,6 @@
 #
 # AtHomeDMX - DMX script engine
-# Copyright (C) 2016  Dave Hocker (email: AtHomeX10@gmail.com)
+# Copyright (C) 2016, 2018  Dave Hocker (email: AtHomeX10@gmail.com)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,4 +14,4 @@ def GetVersion():
   """
   Returns the current server version
   """
-  return "2016.1.0.1"
+  return "2018.1.0.2"
