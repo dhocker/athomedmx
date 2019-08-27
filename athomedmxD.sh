@@ -20,7 +20,7 @@
 
 # Setup the path to lead with the virtualenv. When it's python is executed it
 # will activate the virtualenv.
-VENV=/home/pi/Virtualenvs/athomedmx
+VENV=/home/pi/Virtualenvs/athomedmx3
 PATH=$VENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Change the next 4 lines to suit where you install your script and what you want to call it
