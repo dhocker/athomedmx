@@ -14,8 +14,6 @@
 #
 
 import configuration
-import pyudmx.pyudmx
-import driver.dummy_driver as dummy_driver
 import logging
 
 logger = logging.getLogger("dmx")
@@ -29,9 +27,14 @@ def get_driver():
     interface = configuration.Configuration.Interface().lower()
     d = None
     if interface == "udmx":
+        import pyudmx.pyudmx
         d = pyudmx.pyudmx.uDMXDevice()
     elif interface == "dummy":
+        import driver.dummy_driver as dummy_driver
         d = dummy_driver.DummyDriver()
+    elif interface == "dmx-emulator" or interface == "emulator":
+        from driver.dmx_emulator_driver import DMXEmulatorDriver
+        d = DMXEmulatorDriver()
 
     if d:
         logger.info("%s driver created", interface)
